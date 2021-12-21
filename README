@@ -1,0 +1,20 @@
+Directory structure:
+
+data --> all datasets (or links to datasets)
+util_functions --> all utils files for all tasks
+util_classes --> all general classes, like ensemble methods, etc.
+training_scripts --> all training scripts
+audio_classes --> all classes specifically for audio encoder exps
+image_classes --> subdirectories for various models --> all classes for image exps (e.g. image_classes/densenet/model.py)
+
+config.py = all configuration dictionaries, e.g. allowable_{model/task/ensemble_method}_dict
+
+
+--------------------------------------------------------------------------------
+
+
+Running CIFAR baselines: shell_scripts/densenet/basic_al
+
+Running CIFAR DAF:
+  1. shell_scripts/cifar_daf_recalibration => generates minibatches that DAF acquires
+  2. shell_scripts/daf_active_learning => queues multiple jobs together based on (conlomerated) DAF minibatches

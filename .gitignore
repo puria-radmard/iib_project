@@ -1,0 +1,13 @@
+*/__pycache__
+*/*/__pycache__
+.ipynb_checkpoints
+cifar_repo
+audio_autoencoder
+
+*.ipynb
+old*
+*logs
+data/*
+logs
+
+*.pyc
