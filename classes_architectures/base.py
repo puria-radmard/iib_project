@@ -32,11 +32,9 @@ class SkipDecoderBase(DecoderBase):
         return decodings
 
 
-
 class EncoderBase(nn.Module):
-    def __init__(self, layers, dropout_idxs, noise_idx, variational, embedding_dim, input_batch_norm, return_skips=False):
+    def __init__(self, layers, dropout_idxs, noise_idx, variational, embedding_dim, return_skips=False):
         super(EncoderBase, self).__init__()
-        self.input_batch_norm = input_batch_norm
         self.layers = layers
         self.dropout_idxs = dropout_idxs
         self.noise_idx = noise_idx
@@ -89,32 +87,28 @@ class ImageEncoderBase(EncoderBase):
 
 class StaticAudioEncoderBase(EncoderBase):
 
-    def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim, input_batch_norm=False):
-        input_batch_norm = nn.BatchNorm1d(num_features=mfcc_dim) if input_batch_norm else EmptyLayer()
+    def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim):
         super(StaticAudioEncoderBase, self).__init__(
-            layers, dropout_idxs, noise_idx, variational, embedding_dim, input_batch_norm
+            layers, dropout_idxs, noise_idx, variational, embedding_dim
         )
 
     def forward(self, x):
         x = x.float()
         x = x.permute(0, 2, 1)
-        x = self.input_batch_norm(x)
         x = x.permute(0, 2, 1)
         return super().forward(x)
 
     
 class MovingAudioEncoderBase(EncoderBase):
 
-    def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim, stride, input_batch_norm=False):
+    def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim, stride):
         self.stride = stride
-        input_batch_norm = nn.BatchNorm1d(num_features=mfcc_dim) if input_batch_norm else EmptyLayer()
         super(MovingAudioEncoderBase, self).__init__(
-            layers, dropout_idxs, noise_idx, variational, embedding_dim, input_batch_norm
+            layers, dropout_idxs, noise_idx, variational, embedding_dim
         )
 
     def forward_once(self, x):
         x = x.permute(0, 2, 1)
-        x = self.input_batch_norm(x)
         x = x.permute(0, 2, 1)
         for l in self.layers:
             x = l(x)

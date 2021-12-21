@@ -40,7 +40,6 @@ class ImageReconstructionLoss(ReconstructionLoss):
         return torch.mean(torch.stack(losses)) if self.mean_losses else losses
 
 
-
 class MovingReconstructionLoss(nn.Module):
     def __init__(self, num_frames, stride, mean_decodings, mean_losses=True):
         super(MovingReconstructionLoss, self).__init__()

@@ -346,8 +346,27 @@ class DimensionlessDataset(ActiveLearningDataset):
             y, semi_supervision_mask = self.semi_supervision_agent.process_labels(y, semi_supervision_mask)
             return X, y, [None for x in X], semi_supervision_mask
 
-        else:                            # was lengths
-            return X, torch.tensor([]), [None for x in X], semi_supervision_mask
+            for j, label in enumerate(y):
+                instance_index = batch_indices[j]
+                if self.index.labelled_idx[instance_index]:
+                    pass
+                elif self.index.temp_labelled_idx[instance_index]:
+                    y[j] = self.temp_labels[instance_index]
+                elif self.index.unlabelled_idx[instance_index]:
+                    y[j] = torch.exp(torch.tensor(self.last_logits[instance_index]))
+                    semi_supervision_mask[j] = self.semi_supervision_multiplier
+                else:
+                    raise Exception(
+                        "Instance index does not appear in any of the annotation status lists"
+                    )
+
+        else:
+            return (
+                X,
+                torch.tensor([]),
+                [None for x in X],  # was lengths
+                semi_supervision_mask,
+            )
 
 
 class AudioReconstructionDimensionlessDataset(DimensionlessDataset):
@@ -387,8 +406,16 @@ class AudioReconstructionDimensionlessDataset(DimensionlessDataset):
             y, semi_supervision_mask = self.semi_supervision_agent.process_labels(y, semi_supervision_mask)
             return X, y, lengths, semi_supervision_mask
 
+            for j, label in enumerate(y):
+                ...
+
         else:
-            return X, torch.tensor([]), lengths, semi_supervision_mask
+            return (
+                X,
+                torch.tensor([]),
+                lengths,
+                semi_supervision_mask,
+            )
 
 
 
@@ -421,9 +448,28 @@ class ImageClassificationDataset(ActiveLearningDataset):
             # Fill in with semi-supervision labels            
             y, semi_supervision_mask = self.semi_supervision_agent.process_labels(y, semi_supervision_mask)
             return X, y, torch.tensor([]), semi_supervision_mask
+            # Fill in with semi-supervision labels
+            for j, label in enumerate(y):
+                instance_index = batch_indices[j]
+                if self.index.labelled_idx[instance_index]:
+                    pass
+                elif self.index.temp_labelled_idx[instance_index]:
+                    y[j] = self.temp_labels[instance_index]
+                elif self.index.unlabelled_idx[instance_index]:
+                    y[j] = torch.exp(torch.tensor(self.last_logits[instance_index]))
+                    semi_supervision_mask[j] = self.semi_supervision_multiplier
+                else:
+                    raise Exception(
+                        "Instance index does not appear in any of the annotation status lists"
+                    )
 
-        else:                             # was lengths
-            return X, torch.tensor([]), [None for x in X], semi_supervision_mask
+        else:
+            return (
+                X,
+                torch.tensor([]),
+                [None for x in X],  # was lengths
+                semi_supervision_mask,
+            )
 
 
 class OneDimensionalSequenceTaggingDataset(ActiveLearningDataset):
@@ -479,5 +525,20 @@ class OneDimensionalSequenceTaggingDataset(ActiveLearningDataset):
             # Fill in the words that have not been queried
             tags, semi_supervision_mask = self.semi_supervision_agent.process_labels(tags, semi_supervision_mask)
             return padded_sentences, tags, lengths, semi_supervision_mask
+
+            for j, sentence_tags in enumerate(padded_tags):
+                sentence_index = batch_indices[j]
+                for token_idx in range(int(lengths[j])):
+                    if token_idx in self.index.labelled_idx[sentence_index]:
+                        pass
+                    elif token_idx in self.index.temp_labelled_idx[sentence_index]:
+                        padded_tags[j, token_idx] = torch.tensor(self.temp_labels[sentence_index][token_idx])
+                    elif token_idx in self.index.unlabelled_idx[sentence_index]:
+                        padded_tags[j, token_idx] = torch.exp(torch.tensor(self.last_logits[sentence_index][token_idx]))
+                        semi_supervision_mask[
+                            j, token_idx
+                        ] = self.semi_supervision_multiplier
+                    else:  # Padding
+                        continue
 
         return padded_sentences, torch.tensor([]), lengths, semi_supervision_mask
