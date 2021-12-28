@@ -2,7 +2,7 @@ import json, sys, pickle, os, torch
 from classes_utils.audio.data import AudioRAEUtteranceDataset
 
 from interfaces.audio_interface import get_key_dictionaries, configure_dataloaders
-from classes_utils.architecture_integration import AudioEncoderDecoderEnsemble
+from classes_utils.architecture import AudioEncoderDecoderEnsemble
 from util_functions.data import coll_fn_utt
 
 class Config:

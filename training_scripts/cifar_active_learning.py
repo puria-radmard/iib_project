@@ -5,8 +5,6 @@ from torch import nn
 from cifar_repo.utils.logger import Logger
 from classes_utils.ensemble import AudioEncoderBasicEnsemble
 
-from util_functions.base import reinit_weights
-
 import active_learning as al
 from classes_utils.cifar.data import CIFAR10Subset, CIFAR100Subset
 from cifar_repo.cifar import (
@@ -226,4 +224,3 @@ if __name__ == '__main__':
 
             # append logger file
             logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
-

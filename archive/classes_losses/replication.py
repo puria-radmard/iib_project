@@ -17,7 +17,7 @@ class VAEEnsembleReplicationLossBase(nn.Module):
     def __init__(self, config_dir):
         
         # Avoid circular import
-        from classes_utils.architecture_integration import AudioEncoderDecoderEnsemble
+        from classes_utils.architecture import AudioEncoderDecoderEnsemble
 
         super(VAEEnsembleReplicationLossBase, self).__init__()
         config_file = os.join(config_dir, "config.json")

@@ -311,7 +311,7 @@ def coll_fn_utt(instances):
     }
 
 
-def coll_fn_utt_with_channel(max_length):
+def coll_fn_utt_with_max_length(max_length):
     def ret_func(instances):
         audio = [torch.tensor(ins[0]) for ins in instances]
         texts = [ins[1] for ins in instances]

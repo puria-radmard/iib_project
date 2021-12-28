@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch import nn
 from torch.nn.modules.flatten import Flatten
-from classes_utils.audio.las.attention import FixedLengthSelfAttention
+from classes_utils.audio.las.attention import SelfAttention
 from classes_utils.audio.las.pyramidal_network import pBLSTMLayer
 from util_functions.base import load_state_dict
 from classes_utils.layers import BidirectionalLSTMHiddenStateStacker, BidirectionalLSTMOutputSelector
@@ -121,11 +121,11 @@ class BidirectionalLSTMOnlyAudioEncoder(StaticAudioEncoderBase):
 
 class LASEncoder(StaticAudioEncoderBase):
     
-    def __init__(self, mfcc_dim, hidden_size, pyramid_size, key_size, query_size, value_size, variational):
+    def __init__(self, mfcc_dim, hidden_size, pyramid_size, key_size, query_size, value_size, num_heads, num_attn, variational):
 
         layers = [pBLSTMLayer(input_size=mfcc_dim, hidden_size=hidden_size, num_layers=1, dropout=0.0)]
         layers += [pBLSTMLayer(input_size=hidden_size*2, hidden_size=hidden_size, num_layers=1, dropout=0.0)] * (pyramid_size-1)
-        layers += [FixedLengthSelfAttention(mfcc_dim, query_size, key_size, value_size)]
+        layers += [SelfAttention(mfcc_dim, num_heads, query_size, key_size, value_size)]
 
         super(LASEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, value_size)
 

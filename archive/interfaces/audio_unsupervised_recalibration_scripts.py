@@ -3,8 +3,8 @@ import os, pickle, json
 import numpy as np
 from classes_losses.reconstrution import MovingReconstructionLoss, ReconstructionLoss
 from classes_utils.audio.data import AudioRAEUtteranceDataset
-from training_scripts.audio_unsupervised_recalibration_scripts import unsupervised_recalibration_script
-from classes_utils.architecture_integration import AudioEncoderDecoderEnsemble
+from training_scripts.audio_unsupervised_recalibration import unsupervised_recalibration_script
+from classes_utils.architecture import AudioEncoderDecoderEnsemble
 from util_functions.data import *
 from config import *
 import argparse

@@ -10,4 +10,4 @@ old*
 data/*
 logs
 
-*.pyc
+**.pyc

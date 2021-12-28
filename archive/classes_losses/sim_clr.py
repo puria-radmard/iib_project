@@ -7,12 +7,12 @@ device = (
 )
 
 __all__ = [
-    'SimCLREnsemblanceLoss'
+    'SimCLRResemblanceLoss'
 ]
 
-class SimCLREnsemblanceLoss(nn.Module):
+class SimCLRResemblanceLoss(nn.Module):
     def __init__(self, temperature, batch_size):
-        super(SimCLREnsemblanceLoss, self).__init__()
+        super(SimCLRResemblanceLoss, self).__init__()
         self.temperature = temperature
         self.batch_size = batch_size
         self.criterion = torch.nn.CrossEntropyLoss().to(device)

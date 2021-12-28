@@ -32,14 +32,3 @@ def batch_trace(x):
 
 def batch_outer(z_i, z):
     return torch.einsum('bi,bj->bij', (z_i-z, z_i,z))
-
-def reinit_weights(m):
-    try:
-        if m.weight.dim() > 1:
-            xavier_normal_(m.weight.data)
-        else:
-            zeros_(m.weight.data)
-        if m.bias is not None:
-            zeros_(m.bias.data)
-    except nn.modules.module.ModuleAttributeError:
-        pass

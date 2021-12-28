@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from classes_utils.audio.las.attention import FixedLengthSelfAttention
+from classes_utils.audio.las.attention import SelfAttention
 from classes_utils.audio.las.pyramidal_network import pBLSTMLayer, pLSTMOutputExtractor
 
 batch_size = 4
@@ -21,7 +21,7 @@ layers = nn.Sequential(
     pLSTMOutputExtractor(_print=False)
 )
 
-attention = FixedLengthSelfAttention(512, query_size=256, key_size=256, value_size=256)
+attention = SelfAttention(num_heads = 8, input_size=512, query_size=256, key_size=256, value_size=256)
 
 p_output = layers(data)
 

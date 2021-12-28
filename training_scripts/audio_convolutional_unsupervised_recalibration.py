@@ -12,7 +12,7 @@ import active_learning as al
 from training_scripts.audio_training_scripts import train_autoencoder_ensemble
 from classes_losses.reconstrution import ReconstructionLoss
 from classes_utils.audio.data import SubsetAudioRAEUtteranceDataset
-from classes_utils.architecture_integration import SkipEncoderDecoderEnsemble
+from classes_utils.architecture import SkipEncoderDecoderEnsemble
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
 from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
 from util_functions.data import *
@@ -21,7 +21,7 @@ from config import metric_functions
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from util_functions.data import coll_fn_utt_with_channel
+from util_functions.data import coll_fn_utt_with_max_length
 sns.set_style('darkgrid')
 
 
@@ -344,7 +344,7 @@ if __name__ == '__main__':
             train_audio_dataset.indices = list(new_indices)
         train_dataloader = torch.utils.data.DataLoader(train_audio_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
         train_dataloader = torch.utils.data.DataLoader(
-            train_audio_dataset, collate_fn=coll_fn_utt_with_channel(args.max_seq_len), batch_size=args.batch_size, shuffle=True
+            train_audio_dataset, collate_fn=coll_fn_utt_with_max_length(args.max_seq_len), batch_size=args.batch_size, shuffle=True
         )
         
         # Make logging path based on save_dir

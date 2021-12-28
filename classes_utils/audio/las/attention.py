@@ -1,7 +1,8 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
-class SelfAttentionBase(nn.Module):
+class SelfAttention(nn.Module):
 
     """
         (seq_. are all the same, but used to differentiate)
@@ -24,19 +25,32 @@ class SelfAttentionBase(nn.Module):
             = [batch, seq_q, ]
     """
 
-    def __init__(self, input_size, query_size, key_size, value_size):
-        super(SelfAttentionBase, self).__init__()
-        self.Wk = nn.Linear(input_size, key_size, bias=False)
-        self.Wq = nn.Linear(input_size, query_size, bias=False)
-        self.Wv = nn.Linear(input_size, value_size, bias=False)
+    def __init__(self, input_size, num_heads, query_size, key_size, value_size):
+        
+        super(SelfAttention, self).__init__()
+
+        self.Wk = nn.Linear(input_size, num_heads*key_size, bias=False)
+        self.Wq = nn.Linear(input_size, num_heads*query_size, bias=False)
+        self.Wv = nn.Linear(input_size, num_heads*value_size, bias=False)
+        
         self.Wa = nn.Linear(key_size, query_size, bias=False)
         self.Wb = nn.Linear(value_size, value_size, bias=False)
-        self.softmax = nn.Softmax(dim=-1)
+        
+        self.query_size = query_size
+        self.key_size = key_size // num_heads
+        self.value_size = value_size // num_heads
+        self.num_heads = num_heads
+
+        self.temperature = self.key_size ** 0.5
+        self.softmax = lambda x: F.softmax(x / self.temperature)
+
+    def push_head_dim(self, tensor):
+        return tensor.view(tensor.size(0), tensor.size(1), self.num_heads, -1)
 
     def get_tensors(self, x):
-        k = self.Wk(x)
-        q = self.Wq(x)
-        v = self.Wv(x)
+        k = self.push_head_dim(self.Wk(x))
+        q = self.push_head_dim(self.Wq(x))
+        v = self.push_head_dim(self.Wv(x))
         return k, q, v
 
     def get_alignments(self, k, q):
@@ -51,21 +65,9 @@ class SelfAttentionBase(nn.Module):
         weighted = unweighted.unsqueeze(2) * alignments.permute(0, 2, 1).unsqueeze(-1)
         summed = weighted.sum(dim=1)
         return summed
-
-
-class SequenceSelfAttention(SelfAttentionBase):
         
     def forward(self, x):
         k, q, v = self.get_tensors(x)
         alignments = self.get_alignments(k, q)
         output_sequence = self.get_output_sequence(alignments, v)
         return output_sequence
-
-
-class FixedLengthSelfAttention(SelfAttentionBase):
-        
-    def forward(self, x):
-        k, q, v = self.get_tensors(x)
-        alignments = self.get_alignments(k, q)
-        output_sequence = self.get_output_sequence(alignments, v)
-        return output_sequence.sum(1)

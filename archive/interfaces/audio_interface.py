@@ -14,7 +14,7 @@ from classes_losses import *
 from classes_utils.ensemble import *
 from classes_utils.audio.bert import *
 from classes_utils.audio.data import *
-from classes_utils.architecture_integration import AudioEncoderDecoderEnsemble
+from classes_utils.architecture import AudioEncoderDecoderEnsemble
 
 from training_scripts.audio_training_scripts import *
 
@@ -325,7 +325,7 @@ def configure_training_script_and_losses(args):
             output_args["encodings_criterion"] = (lambda *x, **kx: args.encoder_loss_mult * sem_crit(*x, **kx)) if args.dencder_loss_mult else None
 
         elif args.encoder_task == 'sim_clr':
-            sim_clr_crit = SimCLREnsemblanceLoss(args.sim_clr_temperature, args.batch_size)
+            sim_clr_crit = SimCLRResemblanceLoss(args.sim_clr_temperature, args.batch_size)
             output_args["decodings_criterion"] = (lambda *x, **kx: args.decoder_loss_mult * sim_clr_crit(*x, **kx)) if args.decoder_loss_mult else None
             output_args["encodings_criterion"] = None       
 

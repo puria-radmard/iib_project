@@ -4,7 +4,7 @@ import numpy as np
 from classes_losses.reconstrution import MovingReconstructionLoss, ReconstructionLoss
 from classes_utils.audio.data import AudioCertaintyUtteranceDataset
 from training_scripts.audio_uncertainty_regression import audio_uncertainty_regression_script
-from classes_utils.architecture_integration import AudioEncoderDecoderEnsemble
+from classes_utils.architecture import AudioEncoderDecoderEnsemble
 from util_functions.data import *
 from config import *
 import argparse

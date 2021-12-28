@@ -179,7 +179,7 @@ class StaircaseConvolutionalDecoder(DecoderBase):
 
 if __name__ == '__main__':
 
-    from classes_utils.architecture_integration import SkipEncoderDecoderEnsemble
+    from classes_utils.architecture import SkipEncoderDecoderEnsemble
     from classes_architectures.cifar.encoder import (
         DEFAULT_UNET_ENCODER_OUT_CHANNELS,
         DEFAULT_UNET_ENCODER_KERNEL_SIZES,
