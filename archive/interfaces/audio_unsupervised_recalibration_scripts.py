@@ -2,7 +2,7 @@ import os, pickle, json
 
 import numpy as np
 from classes_losses.reconstrution import MovingReconstructionLoss, ReconstructionLoss
-from classes_utils.audio.data import AudioRAEUtteranceDataset
+from classes_utils.audio.data import AudioUtteranceDataset
 from training_scripts.audio_unsupervised_recalibration import unsupervised_recalibration_script
 from classes_utils.architecture import AudioEncoderDecoderEnsemble
 from util_functions.data import *
@@ -111,14 +111,14 @@ if __name__ == '__main__':
         data_dict, args.labelled_utt_list_path, args.unlabelled_utt_list_path
     )
 
-    labelled_dataset = AudioRAEUtteranceDataset(
+    labelled_dataset = AudioUtteranceDataset(
         labelled_data_dict["mfcc"],
         labelled_data_dict["utterance_segment_ids"],
         labelled_data_dict["text"],
         "config/per_speaker_mean.pkl",
         "config/per_speaker_std.pkl"
     )
-    unlabelled_dataset = AudioRAEUtteranceDataset(
+    unlabelled_dataset = AudioUtteranceDataset(
         unlabelled_data_dict["mfcc"],
         unlabelled_data_dict["utterance_segment_ids"],
         unlabelled_data_dict["text"],

@@ -11,7 +11,7 @@ import active_learning as al
 
 from training_scripts.audio_training_scripts import train_autoencoder_ensemble
 from classes_losses.reconstrution import ReconstructionLoss
-from classes_utils.audio.data import SubsetAudioRAEUtteranceDataset
+from classes_utils.audio.data import SubsetAudioUtteranceDataset
 from classes_utils.architecture import SkipEncoderDecoderEnsemble
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
 from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
@@ -21,7 +21,7 @@ from config import metric_functions
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from util_functions.data import coll_fn_utt_with_max_length
+from util_functions.data import coll_fn_utt_with_channel_insersion
 sns.set_style('darkgrid')
 
 
@@ -163,15 +163,15 @@ def set_up_active_learning(args):
     if args.features_paths:
         print('loading from features path')
         data_dict = generate_data_dict_utt(args.features_paths, text_path=None)
-        if not args.use_dim_means:
-            print('removing mean')
-            data_dict['mfcc'] = data_demeaning(data_dict['mfcc'])
-    elif args.data_dict_path:
-        print('loading from data dict path')
-        with open(args.data_dict_path, 'rb') as handle:
-            data_dict = pickle.load(handle)
-    else:
-        raise argparse.ArgumentError(None, 'Need either data_dict_path or features_paths')
+    #     if not args.use_dim_means:
+    #         print('removing mean')
+    #         data_dict['mfcc'] = data_demeaning(data_dict['mfcc'])
+    # elif args.data_dict_path:
+    #     print('loading from data dict path')
+    #     with open(args.data_dict_path, 'rb') as handle:
+    #         data_dict = pickle.load(handle)
+    # else:
+    #     raise argparse.ArgumentError(None, 'Need either data_dict_path or features_paths')
     
     print(f'limiting mfcc sequence length to {args.max_seq_len}')
     data_dict = data_dict_length_split(data_dict, args.max_seq_len)
@@ -181,14 +181,13 @@ def set_up_active_learning(args):
         data_dict, args.labelled_utt_list_path, args.unlabelled_utt_list_path
     )
 
-    train_audio_dataset = SubsetAudioRAEUtteranceDataset(
+    train_audio_dataset = SubsetAudioUtteranceDataset(
         labelled_data_dict["mfcc"] + unlabelled_data_dict["mfcc"],
         labelled_data_dict["utterance_segment_ids"] + unlabelled_data_dict["utterance_segment_ids"],
         labelled_data_dict["text"] + unlabelled_data_dict["text"],
         "config/per_speaker_mean.pkl",
         "config/per_speaker_std.pkl",
-        list(range(len(labelled_data_dict["mfcc"]))),
-        add_channel=False        
+        list(range(len(labelled_data_dict["mfcc"])))       
     )
 
     # Standard active learning definitions
@@ -344,7 +343,7 @@ if __name__ == '__main__':
             train_audio_dataset.indices = list(new_indices)
         train_dataloader = torch.utils.data.DataLoader(train_audio_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
         train_dataloader = torch.utils.data.DataLoader(
-            train_audio_dataset, collate_fn=coll_fn_utt_with_max_length(args.max_seq_len), batch_size=args.batch_size, shuffle=True
+            train_audio_dataset, collate_fn=coll_fn_utt_with_channel_insersion, batch_size=args.batch_size, shuffle=True
         )
         
         # Make logging path based on save_dir

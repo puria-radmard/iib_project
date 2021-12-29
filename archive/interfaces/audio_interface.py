@@ -269,7 +269,7 @@ def configure_dataloaders(args, split_seed = None):
         ood_data_dict = {k: np.array(v)[out_domain] for k, v in data_dict.items()}
         data_dict = {k: np.array(v)[in_domain] for k, v in data_dict.items()}
 
-        master_dataset = AudioRAEUtteranceDataset(data_dict["mfcc"], data_dict["utterance_segment_ids"], data_dict["text"])
+        master_dataset = AudioUtteranceDataset(data_dict["mfcc"], data_dict["utterance_segment_ids"], data_dict["text"])
         test_length = int(np.floor(args.test_prop*len(master_dataset)))
         train_length = len(master_dataset) - test_length
         datasettrn, datasettst = torch.utils.data.random_split(master_dataset, [train_length, test_length])
@@ -477,7 +477,7 @@ def main():
     
         ensemble.eval()
 
-        ood_dataset = AudioRAEUtteranceDataset(ood_data_dict['mfcc'], ood_data_dict['utterance_segment_ids'], ood_data_dict['text'])
+        ood_dataset = AudioUtteranceDataset(ood_data_dict['mfcc'], ood_data_dict['utterance_segment_ids'], ood_data_dict['text'])
         ood_dataloader = torch.utils.data.dataloader.DataLoader(ood_dataset, 512, collate_fn = coll_fn_utt)
         
         train_anchor, train_reconstruction, train_encs = \

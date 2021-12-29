@@ -91,18 +91,19 @@ if __name__ == '__main__':
     data_dict = data_dict_length_split(data_dict, args.max_seq_len)
 
     master_dataset = AudioCertaintyUtteranceDataset(
-        data_dict["mfcc"], data_dict["utterance_segment_ids"], data_dict["text"], data_dict["certainties"],
+        data_dict["mfcc"], data_dict["utterance_segment_ids"], data_dict["text"],
         "config/per_speaker_mean.pkl",
-        "config/per_speaker_std.pkl"
+        "config/per_speaker_std.pkl",
+        targets = data_dict["certainties"]
     )
     test_length = int(np.floor(args.test_prop*len(master_dataset)))
     train_length = len(master_dataset) - test_length
     datasettrn, datasettst = torch.utils.data.random_split(master_dataset, [train_length, test_length])
     train_dataloader = torch.utils.data.DataLoader(
-        datasettrn, collate_fn=coll_fn_utt_with_targets, batch_size=args.batch_size, shuffle=True
+        datasettrn, collate_fn=coll_fn_utts, batch_size=args.batch_size, shuffle=True
     )
     test_dataloader = torch.utils.data.DataLoader(
-        datasettst, collate_fn=coll_fn_utt_with_targets, batch_size=args.batch_size, shuffle=True
+        datasettst, collate_fn=coll_fn_utts, batch_size=args.batch_size, shuffle=True
     )
 
     print('DONE CONFIGURING DATA\n', flush=True)

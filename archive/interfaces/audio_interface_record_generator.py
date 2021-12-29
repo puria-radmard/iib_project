@@ -1,5 +1,5 @@
 import json, sys, pickle, os, torch
-from classes_utils.audio.data import AudioRAEUtteranceDataset
+from classes_utils.audio.data import AudioUtteranceDataset
 
 from interfaces.audio_interface import get_key_dictionaries, configure_dataloaders
 from classes_utils.architecture import AudioEncoderDecoderEnsemble
@@ -62,7 +62,7 @@ def get_log_info(log_path):
 
 def save_key_dictionaries(ood_data_dict, train_dataloader, model, config, test_dataloader, log_root):
     
-    ood_dataset = AudioRAEUtteranceDataset(ood_data_dict['mfcc'], ood_data_dict['utterance_segment_ids'], ood_data_dict['text'])
+    ood_dataset = AudioUtteranceDataset(ood_data_dict['mfcc'], ood_data_dict['utterance_segment_ids'], ood_data_dict['text'])
     ood_dataloader = torch.utils.data.dataloader.DataLoader(ood_dataset, 512, collate_fn = coll_fn_utt)
 
     train_anchor, train_reconstruction, train_encs = \
