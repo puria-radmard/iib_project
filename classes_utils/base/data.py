@@ -32,25 +32,20 @@ class EvenBinaryClassificationBatchSampler(Sampler):
         self.minority_indices, self.majority_indices = sorted([class0_indices, class1_indices], key=len)
         super(EvenBinaryClassificationBatchSampler, self).__init__(data_source)
 
-    def majority_sampler(self):
-        n = len(self.majority_indices)
+    @staticmethod
+    def make_sampler(indices_list):
+        n = len(indices_list)
         generator = torch.Generator()
         generator.manual_seed(int(torch.empty((), dtype=torch.int64).random_().item()))
         position_list = torch.randperm(n, generator=generator).tolist()
-        yield from list(map(list(self.majority_indices).__getitem__, position_list))
-
-    def minority_sampler(self):
-        n = len(self.minority_indices)
-        generator = torch.Generator()
-        generator.manual_seed(int(torch.empty((), dtype=torch.int64).random_().item()))
-        position_list = torch.randperm(n, generator=generator).tolist()
-        yield from list(map(list(self.minority_indices).__getitem__, position_list))
+        yield from list(map(list(indices_list).__getitem__, position_list))
         
     def __iter__(self):
         batch = []
-        for maj_idx, min_idx in zip(self.majority_sampler(), self.minority_sampler()):
-            batch.append(maj_idx)
-            batch.append(min_idx)
+        majority_sampler = self.make_sampler(self.majority_indices)
+        minority_sampler = self.make_sampler(self.minority_indices)
+        for idx_pair in zip(majority_sampler, minority_sampler):
+            batch.extend(idx_pair)
             if len(batch) == self.batch_size:
                 random.shuffle(batch)
                 yield batch
@@ -76,7 +71,7 @@ class ClassificationDAFDataloader(DataLoader):
 
     def __iter__(self):
         if self.spent:
-            raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of data labelled vector')
+            raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of date labelled vector')
         else:
             self.spent = True
             return super().__iter__()

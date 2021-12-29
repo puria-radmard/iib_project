@@ -1,0 +1,1 @@
+from config.ootb_architectures.library import *

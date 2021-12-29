@@ -26,6 +26,7 @@ parser.add_argument('--roundEpochs', type=int, help='Number of epochs to train a
 parser.add_argument('--saveDir', type=str, help='Where to make directories to save performances & indices')
 
 def make_ensemble(args, ensemble_size, num_classes):
+    "Make a resnet model"
     ensemble = AudioEncoderBasicEnsemble(
         encoder_type=make_model,
         ensemble_size=ensemble_size,

@@ -8,6 +8,7 @@ from cifar_repo.utils.logger import Logger
 from cifar_repo.cifar import transform_test
 
 import active_learning as al
+from config.ootb_architectures.library import default_audio_unet_network, default_noskip_audio_unet_network
 
 from training_scripts.audio_training_scripts import train_autoencoder_ensemble
 from classes_losses.reconstrution import ReconstructionLoss
@@ -15,8 +16,11 @@ from classes_utils.audio.data import SubsetAudioUtteranceDataset
 from classes_utils.architecture import SkipEncoderDecoderEnsemble
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
 from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
+from training_scripts.unsupervised_recalibration_scripts import unsupervised_recalibration_script
 from util_functions.data import *
 from config import metric_functions
+from torch.utils.data import DataLoader
+from interfaces.cifar_unsupervised_recalibration import ModelWrapper, config_savedir
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -79,78 +83,6 @@ class ModelWrapper(nn.Module):
             return encodings, decodings
         else:
             return {'last_logits': decodings, 'embeddings': encodings}
-
-
-def update_indices(previously_trained_indices, agent):
-    # We are using the pytorch dataloader, so need to move the batches to the CIFARSubset classes
-    new_indices = []
-    for ls in agent.labelled_set:
-        # The agent will continually add more data to the labelled set
-        # We want to filter out the previously seen indices, only finetuning on new data
-        unseen_indices = list(filter(lambda x: x not in previously_trained_indices, ls))
-        new_indices.extend(unseen_indices)
-        previously_trained_indices.update(unseen_indices)  
-    return previously_trained_indices, new_indices
-
-
-def configure_autoencoder(args):
-
-    encoder_ensemble_kwargs = {
-        "input_size": (1, None, 40),
-        "out_channels": DEFAULT_UNET_ENCODER_OUT_CHANNELS[:-1],
-        "kernel_sizes": DEFAULT_UNET_ENCODER_KERNEL_SIZES[:-1],
-        "strides": DEFAULT_UNET_ENCODER_STRIDES[:-1],
-        "variational": False,
-        "flatten": False
-    }
-
-    concat_idxs = [-1, 2, 1] if args.unet_skips else [-1, -1, -1]
-
-    decoder_ensemble_kwargs = {
-        "embedding_dim": 256, #None,
-        "output_channels": 1,
-        "out_channels": DEFAULT_UNET_DECODER_OUT_CHANNELS[1:], #[128, 64, 32],
-        "kernel_sizes": DEFAULT_UNET_DECODER_KERNEL_SIZES[1:], #[(4, 3), 3, 3, 4],
-        "strides": DEFAULT_UNET_DECODER_STRIDES[1:], #[2, 2, 2, 1], 
-        "concat_idxs": concat_idxs,
-        "flattened": False
-    }
-
-    autoencoder_ensemble = SkipEncoderDecoderEnsemble(
-        ensemble_type='basic',
-        encoder_type='unet',
-        decoder_type='unet',
-        ensemble_size=1,
-        encoder_ensemble_kwargs=encoder_ensemble_kwargs,
-        decoder_ensemble_kwargs=decoder_ensemble_kwargs,
-        mult_noise=0
-    )
-
-    return autoencoder_ensemble
-
-
-def config_savedir(args):
-  
-    i=0
-    while True:
-        try:
-            save_dir=f"{args.save_dir}-{i}"
-            os.mkdir(save_dir)
-            break
-        except:
-            i+=1
-        if i>50:
-            raise Exception("Too many folders!")
-
-    saveable_args = vars(args)
-    config_json_path = os.path.join(save_dir, "config.json")
-
-    print(f"Config dir : {save_dir}\n", flush=True)
-
-    with open(config_json_path, "w") as jfile:
-        json.dump(saveable_args, jfile)
-
-    return save_dir
 
 
 def set_up_active_learning(args):
@@ -245,39 +177,6 @@ def set_up_active_learning(args):
     return agent, train_audio_dataset, round_cost, total_budget, encodings_criterion, decodings_criterion, anchor_criterion
 
 
-def make_metric_dictionary(all_round_windows, round_num, labelled_indices, newly_added_indices, save_dir):
-    
-    # Initialise the distributions
-    labelled_distribution, unlabelled_distribution, new_added_distribution = [], [], []
-
-    # Selector stores all window scores anyway, which are what the `active learning' is based on
-    for window in all_round_windows:
-        # Get score
-        metric, index = window.score, window.i
-        # Add to correct distributions
-        is_labelled = index in labelled_indices
-        labelled_distribution.append(metric) if is_labelled else unlabelled_distribution.append(metric)
-        # Another distribution of indices about to be labelled
-        if index in newly_added_indices:
-            new_added_distribution.append(metric)
-    
-    if round_num%3 == 1:
-        fig_path = os.path.join(save_dir, f"dis_plot_{round_num}_{len(labelled_distribution)}.png")
-        fig, axs = plt.subplots(1, figsize=(10, 10))
-        sns.histplot(unlabelled_distribution, label = "Unseen set", ax=axs, color='r')
-        sns.histplot(labelled_distribution, label = "Seen set", ax=axs, color='b')
-        sns.histplot(new_added_distribution, label = "New added set", ax=axs, color='g')
-        axs.legend()
-        fig.savefig(fig_path)
-
-    pickle_path = os.path.join(save_dir, f"distributions_{round_num}_{len(labelled_distribution)}.pkl")
-    with open(pickle_path, 'wb') as h:
-        pickle.dump(
-            {'seen': labelled_distribution, 'unseen': unlabelled_distribution},
-            h, pickle.HIGHEST_PROTOCOL
-        )
-
-
 if __name__ == '__main__':
 
     print('CONFIGURING ARGS', flush=True)
@@ -298,13 +197,6 @@ if __name__ == '__main__':
     print('Adding each round: ', round_cost, ' seconds')
     print('Will stop at: ', total_budget, ' seconds')
 
-    # Init with range(len(train_audio_dataset))
-
-    # agent.model.model = configure_autoencoder(args)
-    # batch = torch.randn(8, 1, 300, 40)
-    # agent.model(batch)
-    # agent.model.model.decoder(x, skip_list)
-
     # Starting with 
     budget_spent = 0
     for i in train_audio_dataset.indices:
@@ -317,94 +209,14 @@ if __name__ == '__main__':
     # Manually resetting agent budget
     agent.budget = total_budget
 
-    round_num = 0
-    # Keep track of the utterances we have already trained on
-    # At each finetuning stage we finetune only on the added set
-    previously_trained_indices = set()
+    model_init_method = default_audio_unet_network if args.unet_skips else default_noskip_audio_unet_network
+    dataloader_init_method = lambda ds, bs: DataLoader(
+        ds, collate_fn=coll_fn_utt_with_channel_insersion, batch_size=bs, shuffle=True
+    )
 
-    for _ in agent:
-
-        # Lag in when the metric values are actually updated!
-        if round_num > 0:
-            make_metric_dictionary(agent.selector.all_round_windows, round_num, previously_trained_indices, set(new_indices), save_dir)
-
-        previously_trained_indices, new_indices = update_indices(previously_trained_indices, agent)
-        
-        ## Sanity check on this
-        # unlabelled_scores = list(filter(lambda x: x.i not in previously_trained_indices, agent.selector.all_round_windows))
-        # unlabelled_scores = sorted(unlabelled_scores, key=lambda w: w.score, reverse = True)
-        # set(map(lambda x: x.i, unlabelled_scores[:500])) == set(new_indices)
-
-        if args.reinitialise_autoencoder_ensemble:
-            # Reinit - we finetune on all data so far
-            train_audio_dataset.indices = list(previously_trained_indices)
-        else:
-            # Don't reinit - we only finetune on unseen data
-            train_audio_dataset.indices = list(new_indices)
-        train_dataloader = torch.utils.data.DataLoader(train_audio_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        train_dataloader = torch.utils.data.DataLoader(
-            train_audio_dataset, collate_fn=coll_fn_utt_with_channel_insersion, batch_size=args.batch_size, shuffle=True
-        )
-        
-        # Make logging path based on save_dir
-        round_num += 1
-
-        with open(os.path.join(save_dir, f'labelled_set_{round_num}.txt'), 'w') as f:
-            for i in new_indices:
-                f.write(str(i))
-                f.write('\n')
-
-        print(f'\n\nRound: {round_num} | {len(train_audio_dataset)} labelled')
-
-        if args.reinitialise_autoencoder_ensemble or round_num == 1:
-            agent.model.model = configure_autoencoder(args)
-            agent.model = agent.model.to(device)
-
-        # Need to return logits drectly while in training/val script
-        agent.model.midloop = True
-
-        if round_num == 1:
-            initial_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.initial_lr, \
-                momentum=args.momentum, weight_decay=args.weight_decay)
-            agent.model, results = train_autoencoder_ensemble(
-                ensemble=agent.model,
-                optimizer=initial_optimizer,
-                scheduler=None,
-                scheduler_epochs=[],
-                encodings_criterion=encodings_criterion,
-                decodings_criterion=decodings_criterion,
-                anchor_criterion=anchor_criterion,
-                train_dataloader=train_dataloader,
-                test_dataloader=[],
-                num_epochs=args.num_initial_epochs,
-                show_print=True,
-            )
-
-        else:
-            finetune_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.finetune_lr, \
-                momentum=args.momentum, weight_decay=args.finetune_weight_decay)
-            agent.model, results = train_autoencoder_ensemble(
-                ensemble=agent.model,
-                optimizer=finetune_optimizer,
-                scheduler=None,
-                scheduler_epochs=[],
-                encodings_criterion=encodings_criterion,
-                decodings_criterion=decodings_criterion,
-                anchor_criterion=anchor_criterion,
-                train_dataloader=train_dataloader,
-                test_dataloader=[],
-                num_epochs=args.num_finetune_epochs,
-                show_print=True,
-            )
-
-        results_path = os.path.join(save_dir, f'round_{round_num}_results.json')
-        with open(results_path, 'w') as jfile:
-            json.dump(results, jfile)
-
-        # Need to return attribute dictionary while for active learning agent
-        agent.model.midloop = False
-
-        # When this loop ends, model attributes and scores are updated, using a model that is trained on everything so far
-        # So we need to visualise the distributions after this point
+    agent = unsupervised_recalibration_script(
+        agent, args, model_init_method, dataloader_init_method, train_audio_dataset, 
+        encodings_criterion, decodings_criterion, anchor_criterion, save_dir, device
+    )
 
     torch.save(agent.model.state_dict(), os.path.join(save_dir, 'final_autoencoder.mdl'))

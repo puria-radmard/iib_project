@@ -13,12 +13,15 @@ if __name__ == '__main__':
     print('CONFIGURING ARGS', flush=True)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--architecture_name", required=True, type=str)
+
     parser.add_argument("--cell_type", required=True, type=str)
     parser.add_argument("--encoder_lstm_sizes", required=True, type=int, nargs='+')
     parser.add_argument("--encoder_lstm_layers", required=True, type=int, nargs='+')
     parser.add_argument("--decoder_fc_hidden_dims", required=True, type=int, nargs='+')
     parser.add_argument("--feature_dim", required=True, type=int, help="Audio feature vector size")
     parser.add_argument("--embedding_dim", required=True, type=int, help="Hidden size of LSTM encoder")
+
     parser.add_argument("--lr", required=True, type=float, help="Learning rate of RAE optimizer")
     parser.add_argument("--scheduler_epochs", required=True, nargs="+", type=int)
     parser.add_argument("--scheduler_proportion", required=True, type=float)
@@ -37,26 +40,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # args.moving_encoder = (args.encoder_architecture in moving_encoder_types)
 
-    encoder_ensemble_kwargs = {
-        "mfcc_dim": args.feature_dim, "embedding_dim": args.embedding_dim, 
-        "dropout_rate": args.dropout, "variational": False, 
-        "lstm_sizes": args.encoder_lstm_sizes,
-        "lstm_layers": args.encoder_lstm_layers,
-        "fc_hidden_dims": [],
-        "cell_type": args.cell_type
-    } 
-    decoder_ensemble_kwargs = {
-        "embedding_dim": args.embedding_dim,
-        "layer_dims": args.decoder_fc_hidden_dims,
-        # Need sigmoid for regression
-        "nonlinearities": ['tanh' for _ in args.decoder_fc_hidden_dims[:-1]] + ['sigmoid'],
-        "dropout_rate": args.dropout, "mean_first": False,
-    }
-
-    ensemble = AudioEncoderDecoderEnsemble(
-        "basic", "basic_bidirectional_LSTM", "fc_decoder",
-        1, encoder_ensemble_kwargs, decoder_ensemble_kwargs
-    ).to(device)
+    ADD HERE
 
     opt = torch.optim.Adam(
         ensemble.parameters(), lr=args.lr, weight_decay=args.weight_decay

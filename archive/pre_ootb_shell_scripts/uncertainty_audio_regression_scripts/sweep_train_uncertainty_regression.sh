@@ -15,8 +15,6 @@ alignment_paths="${alignment_base}/decode_LM1-int_b50.BLXXXeval3/score_mbr_10/BL
 #run_script="/home/alta/BLTSpeaking/exp-pr450/shell_scripts/uncertainty_audio_regression_scripts/train_uncertainty_regression.sh"
 #txt_base=
 
-REPLACE WITH short_recurrent_regression_network and long_recurrent_regression_network
-
 $run_script ${txt_base}_01.txt 0.0001 256,128 3,3 128 128,16,1 10 gru $alignment_paths
 $run_script ${txt_base}_02.txt 0.00001 256,128 3,3 128 128,16,1 10 gru $alignment_paths
 $run_script ${txt_base}_03.txt 0.000001 256,128 3,3 128 128,16,1 10 gru $alignment_paths
