@@ -100,9 +100,8 @@ class LabelledClassificationAudioUtteranceDataset(AudioUtteranceDataset):
 
 
 
-if __name__ == '__main__':
+def _make_test_labelled_classification_dataset(dataset_size):
 
-    dataset_size = 128
     seq_len = 4000
     num_dims = 40
     speakers = ['A', 'B', 'C', 'D', 'E']
@@ -111,7 +110,7 @@ if __name__ == '__main__':
     utt_ids = [f"utt_{i+1}-speaker{random.choice(speakers)}" for i in range(dataset_size)]
     dim_means = {f"speaker{X}": 20*torch.ones(num_dims) for X in speakers}
     dim_stds = {f"speaker{X}": 5*torch.ones(num_dims) for X in speakers}
-    init_labelled_indices = [1,2,70]
+    init_labelled_indices = random.sample(range(dataset_size), int(dataset_size/3))
     kwargs = {
         "attribute_a": list(map(lambda x: x + "'s attribute a", utt_ids)),
         "attribute_b": list(map(lambda x: x + "'s attribute b", utt_ids))
@@ -120,6 +119,14 @@ if __name__ == '__main__':
     dataset = LabelledClassificationAudioUtteranceDataset(
         audio, utt_ids, dim_means, dim_stds, init_labelled_indices, **kwargs
     )
+
+    return dataset
+
+
+
+if __name__ == '__main__':
+
+    dataset = _make_test_labelled_classification_dataset(128)
 
     import pdb; pdb.set_trace()
 

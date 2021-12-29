@@ -1,45 +1,112 @@
+from math import ceil, floor
+import random
 import torch
+from torch.utils.data import DataLoader, Sampler, BatchSampler
+import numpy as np
 
-class StratifiedSampler:
-    # https://github.com/ncullen93/torchsample/blob/master/torchsample/samplers.py#L22
-    """Stratified Sampling
-    Provides equal representation of target classes in each batch
+
+class EvenBinaryClassificationBatchSampler(Sampler):
+
     """
-    def __init__(self, class_vector, batch_size):
-        """
-        Arguments
-        ---------
-        class_vector : torch tensor
-            a vector of class labels
-        batch_size : integer
-            batch_size
-        """
-        self.n_splits = int(class_vector.size(0) / batch_size)
-        self.class_vector = class_vector
-
-    def gen_sample_array(self):
-        try:
-            from sklearn.model_selection import StratifiedShuffleSplit
-        except:
-            print('Need scikit-learn for this functionality')
-        import numpy as np
+        For an uneven binary dataset of labels {0,1}, this will ensure that each batch is
+        a close as possible to 50-50
         
-        s = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=0.5)
-        X = th.randn(self.class_vector.size(0),2).numpy()
-        y = self.class_vector.numpy()
-        s.get_n_splits(X, y)
+        Each batch is:
+            50%: The minority class is randomly sampled without replacement
+            50%: The majority class is randomly sampled without replacement
+            This works by effectively keeping two independent samplers, as shown by methods
+        
+        Epoch lengths are the size of the minority class * 2
+            i.e. not all majority class data will be sampled each epoch
 
-        train_index, test_index = next(s.split(X, y))
-        return np.hstack([train_index, test_index])
+    """
 
+    def __init__(self, data_source, batch_size, class1_indices):
+        self.data_source = data_source
+        self.batch_size = batch_size
+        class1_indices = set(class1_indices)
+        class0_indices = set(range(len(data_source))) - set(class1_indices)
+
+        # Make the class with more instances the majority class, and vice versa
+        # Typically, `unlabelled' is the minoirty class
+        self.minority_indices, self.majority_indices = sorted([class0_indices, class1_indices], key=len)
+        super(EvenBinaryClassificationBatchSampler, self).__init__(data_source)
+
+    def majority_sampler(self):
+        n = len(self.majority_indices)
+        generator = torch.Generator()
+        generator.manual_seed(int(torch.empty((), dtype=torch.int64).random_().item()))
+        position_list = torch.randperm(n, generator=generator).tolist()
+        yield from list(map(list(self.majority_indices).__getitem__, position_list))
+
+    def minority_sampler(self):
+        n = len(self.minority_indices)
+        generator = torch.Generator()
+        generator.manual_seed(int(torch.empty((), dtype=torch.int64).random_().item()))
+        position_list = torch.randperm(n, generator=generator).tolist()
+        yield from list(map(list(self.minority_indices).__getitem__, position_list))
+        
     def __iter__(self):
-        return iter(self.gen_sample_array())
+        batch = []
+        for maj_idx, min_idx in zip(self.majority_sampler(), self.minority_sampler()):
+            batch.append(maj_idx)
+            batch.append(min_idx)
+            if len(batch) == self.batch_size:
+                random.shuffle(batch)
+                yield batch
+                batch = []
+        if len(batch) > 0:
+            random.shuffle(batch)
+            yield batch
 
     def __len__(self):
-        return len(self.class_vector)
+        # Keep going until minority class is expended
+        num_effective = 2*len(self.minority_indices)
+        return (num_effective + self.batch_size - 1) // self.batch_size
 
 
-class DAFDataloader(torch.utils.data.DataLoader):
-    def __init__(self, **kwargs):
-        batch_sampler = None
-        super(DAFDataloader, self).__init__(**kwargs)
+class ClassificationDAFDataloader(DataLoader):
+    def __init__(self, dataset, **kwargs):
+        batch_sampler = EvenBinaryClassificationBatchSampler(
+            data_source=dataset, batch_size=kwargs['batch_size'], class1_indices=dataset.indices
+        )
+        del kwargs['shuffle'], kwargs['batch_size']
+        self.spent = False
+        super(ClassificationDAFDataloader, self).__init__(dataset, batch_sampler=batch_sampler, **kwargs)
+
+    def __iter__(self):
+        if self.spent:
+            raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of data labelled vector')
+        else:
+            self.spent = True
+            return super().__iter__()
+
+
+if __name__ == '__main__':
+
+    from util_functions.data import coll_fn_utt
+    from classes_utils.audio.data import _make_test_labelled_classification_dataset
+    
+    
+    dataset = _make_test_labelled_classification_dataset(1000)
+    batch_size = 64
+
+    dataloader = ClassificationDAFDataloader(
+        dataset,
+        collate_fn=coll_fn_utt,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+
+    for batch in dataloader:
+        print(batch['labelled'].sum()/batch['labelled'].size(0))
+
+    print(f"Size of dataset: {len(dataset)}")
+    print(f"Of which class 1 (labelled): {len(dataset.indices)}")
+    print(f"Effective length: {len(dataset.indices)*2}, in {len(dataset.indices)*2/batch_size} batches")
+    print(f"ClassificationDAFDataloader length: {len(dataloader)} batches")
+
+    import pdb; pdb.set_trace()
+
+    for batch in dataloader:
+        pass

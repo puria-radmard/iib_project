@@ -100,10 +100,10 @@ if __name__ == '__main__':
     train_length = len(master_dataset) - test_length
     datasettrn, datasettst = torch.utils.data.random_split(master_dataset, [train_length, test_length])
     train_dataloader = torch.utils.data.DataLoader(
-        datasettrn, collate_fn=coll_fn_utts, batch_size=args.batch_size, shuffle=True
+        datasettrn, collate_fn=coll_fn_utt, batch_size=args.batch_size, shuffle=True
     )
     test_dataloader = torch.utils.data.DataLoader(
-        datasettst, collate_fn=coll_fn_utts, batch_size=args.batch_size, shuffle=True
+        datasettst, collate_fn=coll_fn_utt, batch_size=args.batch_size, shuffle=True
     )
 
     print('DONE CONFIGURING DATA\n', flush=True)

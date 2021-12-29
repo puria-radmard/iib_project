@@ -122,20 +122,21 @@ def split_data_dict(data_dict, labelled_utt_list_path, unlabelled_utt_list_path)
     return labelled_data_dict, unlabelled_data_dict
 
 
-def coll_fn_utts(instances):
-    audio = [torch.tensor(ins["audio"]) for ins in instances]
-    packed_audio = nn.utils.rnn.pack_sequence(audio, enforce_sorted=False)
-    padded, lengths = nn.utils.rnn.pad_packed_sequence(packed_audio, batch_first=True)
-    res = {"audio": padded}
+def coll_fn_utt(instances):
+    res = {}
     for k in instances[0].keys():
         inses = [ins[k] for ins in instances]
         try: res[k] = torch.tensor(inses)
         except: res[k] = inses
+    audio = [torch.tensor(ins["audio"]) for ins in instances]
+    packed_audio = nn.utils.rnn.pack_sequence(audio, enforce_sorted=False)
+    padded, lengths = nn.utils.rnn.pad_packed_sequence(packed_audio, batch_first=True)
+    res["audio"] = padded
     return res
 
 
 def coll_fn_utt_with_channel_insersion(instances):
-    res = coll_fn_utts(instances)
+    res = coll_fn_utt(instances)
     res["audio"] = res["audio"][:,None]
     return res
 
