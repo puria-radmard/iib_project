@@ -21,22 +21,14 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/bi
 
 
 lr=$1
-encoder_lstm_sizes=`echo "$2" | tr , " "`
-encoder_lstm_layers=`echo "$3" | tr , " "`
-embedding_dim=$4
-decoder_fc_hidden_dims=`echo "$5" | tr , " "`
-num_epochs=$6
-cell_type=$7
-alignment_paths=`echo "$8" | tr , " "`
-
+architecture=$2
+num_epochs=$3
+cell_type=$4
+alignment_paths=`echo "$5" | tr , " "`
 
 python -m interfaces.uncertainty_audio_regression \
     --cell_type $cell_type \
-    --encoder_lstm_sizes $encoder_lstm_sizes \
-    --encoder_lstm_layers $encoder_lstm_layers \
-    --decoder_fc_hidden_dims $decoder_fc_hidden_dims \
-    --feature_dim 40 \
-    --embedding_dim $embedding_dim \
+    --architecture_name architecture \
     --lr $lr \
     --num_epochs $num_epochs \
     --scheduler_epochs 5 \

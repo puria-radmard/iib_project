@@ -13,14 +13,14 @@ if __name__ == '__main__':
     print('CONFIGURING ARGS', flush=True)
 
     parser = argparse.ArgumentParser()
+    
     parser.add_argument("--architecture_name", required=True, type=str)
-
     parser.add_argument("--cell_type", required=True, type=str)
-    parser.add_argument("--encoder_lstm_sizes", required=True, type=int, nargs='+')
-    parser.add_argument("--encoder_lstm_layers", required=True, type=int, nargs='+')
-    parser.add_argument("--decoder_fc_hidden_dims", required=True, type=int, nargs='+')
-    parser.add_argument("--feature_dim", required=True, type=int, help="Audio feature vector size")
-    parser.add_argument("--embedding_dim", required=True, type=int, help="Hidden size of LSTM encoder")
+    # parser.add_argument("--encoder_lstm_sizes", required=True, type=int, nargs='+')
+    # parser.add_argument("--encoder_lstm_layers", required=True, type=int, nargs='+')
+    # parser.add_argument("--decoder_fc_hidden_dims", required=True, type=int, nargs='+')
+    # parser.add_argument("--feature_dim", required=True, type=int, help="Audio feature vector size")
+    # parser.add_argument("--embedding_dim", required=True, type=int, help="Hidden size of LSTM encoder")
 
     parser.add_argument("--lr", required=True, type=float, help="Learning rate of RAE optimizer")
     parser.add_argument("--scheduler_epochs", required=True, nargs="+", type=int)
@@ -40,7 +40,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # args.moving_encoder = (args.encoder_architecture in moving_encoder_types)
 
-    ADD HERE
+
+
+    ensemble = short_recurrent_regression_network
+    long_recurrent_regression_network
+    
 
     opt = torch.optim.Adam(
         ensemble.parameters(), lr=args.lr, weight_decay=args.weight_decay
