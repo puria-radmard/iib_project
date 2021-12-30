@@ -33,7 +33,7 @@ class pBLSTMLayer(nn.Module):
         time_reduc = int(dur / 2)
         input_xr = x.contiguous().view(batch, time_reduc, feat * 2)
         output, hidden = self.BLSTM(input_xr)
-        return output, hidden
+        return output# , hidden
 
 
 class pLSTMOutputExtractor(nn.Module):

@@ -8,7 +8,7 @@ import active_learning as al
 
 from classes_losses.reconstrution import ImageReconstructionLoss
 from classes_utils.cifar.data import CIFAR100Subset, CIFAR10Subset
-from config.ootb_architectures.library import default_staircase_network, default_unet_network, no_skip_default_unet_network
+from config.ootb_architectures import default_staircase_network, default_unet_network, no_skip_default_unet_network
 from training_scripts.unsupervised_recalibration_scripts import unsupervised_recalibration_script
 from util_functions.data import *
 from config import metric_functions

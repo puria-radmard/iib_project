@@ -15,7 +15,10 @@ DEFAULT_NOSKIP_ENCODER_KERNEL_SIZES=[4,4]
 DEFAULT_NOSKIP_ENCODER_STRIDES=[2,2]
 
 
-__all__ = ['UNetEncoder']
+__all__ = [
+    'UNetEncoder',
+    'NoSkipEncoder'
+]
 
 
 class EncoderPadding(nn.Module):

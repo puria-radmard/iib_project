@@ -4,7 +4,7 @@ from torch.nn.modules.conv import Conv2d
 from classes_architectures.base import DecoderBase, SkipDecoderBase
 from classes_architectures.cifar.encoder import ConvBlock
 
-__all__ = ['UNetDecoder', 'NoSkipDecoder']
+__all__ = ['UNetDecoder', 'NoSkipDecoder', 'StaircaseConvolutionalDecoder']
 
 DEFAULT_UNET_DECODER_OUT_CHANNELS = [256, 128, 64, 32]
 DEFAULT_UNET_DECODER_KERNEL_SIZES = [3, 3, 3, 3, 3]

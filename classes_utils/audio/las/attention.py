@@ -33,19 +33,17 @@ class SelfAttention(nn.Module):
         self.Wq = nn.Linear(input_size, num_heads*query_size, bias=False)
         self.Wv = nn.Linear(input_size, num_heads*value_size, bias=False)
         
-        self.Wa = nn.Linear(key_size, query_size, bias=False)
-        self.Wb = nn.Linear(value_size, value_size, bias=False)
-        
         self.query_size = query_size
         self.key_size = key_size // num_heads
         self.value_size = value_size // num_heads
         self.num_heads = num_heads
 
         self.temperature = self.key_size ** 0.5
-        self.softmax = lambda x: F.softmax(x / self.temperature)
+        self.softmax = lambda x: F.softmax(x / self.temperature, dim=-1)
 
     def push_head_dim(self, tensor):
-        return tensor.view(tensor.size(0), tensor.size(1), self.num_heads, -1)
+        head_pushed = tensor.view(tensor.size(0), tensor.size(1), self.num_heads, -1)
+        return head_pushed.permute(0, 2, 1, 3)
 
     def get_tensors(self, x):
         k = self.push_head_dim(self.Wk(x))
@@ -54,15 +52,11 @@ class SelfAttention(nn.Module):
         return k, q, v
 
     def get_alignments(self, k, q):
-        e = q @ self.Wa(k).permute(0, 2, 1)
+        e = q @ k.permute(0, 1, 3, 2)
         return self.softmax(e)
 
     def get_output_sequence(self, alignments, v):
-        # alignments = 0.1*(10*alignments).round()
-        # alignments[:,0,0] = 0
-        # import pdb; pdb.set_trace()
-        unweighted = self.Wb(v)
-        weighted = unweighted.unsqueeze(2) * alignments.permute(0, 2, 1).unsqueeze(-1)
+        weighted = alignments @ v
         summed = weighted.sum(dim=1)
         return summed
         

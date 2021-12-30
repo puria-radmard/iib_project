@@ -1,32 +1,36 @@
-import torch
-from torch import nn
-from classes_utils.audio.las.attention import SelfAttention
-from classes_utils.audio.las.pyramidal_network import pBLSTMLayer, pLSTMOutputExtractor
+from torch import optim
+from classes_utils.layers import BidirectionalLSTMHiddenStateStacker
+from config import DEFAULT_DTYPE
+from training_scripts.audio_regression_scripts import audio_regression_script
 
-batch_size = 4
-sequence_length = 4000
-feature_dim = 40
 
-data = torch.randn(batch_size, sequence_length, feature_dim)
+if __name__ == '__main__':
 
-hidden_size = 256
+    import torch
+    from torch import nn
+    from classes_utils.audio.las.attention import SelfAttention
+    from config.ootb_architectures.listen_and_attend import default_listen_and_attend_lstm_regression_network
 
-layers = nn.Sequential(
-    # Librispeech default config
-    pBLSTMLayer(input_size=40, hidden_size=hidden_size, num_layers=1, dropout=0.0),
-    pLSTMOutputExtractor(_print=False),
-    pBLSTMLayer(input_size=hidden_size*2, hidden_size=hidden_size, num_layers=1, dropout=0.0),
-    pLSTMOutputExtractor(_print=False),
-    pBLSTMLayer(input_size=hidden_size*2, hidden_size=hidden_size, num_layers=1, dropout=0.0),
-    pLSTMOutputExtractor(_print=False)
-)
+    batch_size = 4
+    sequence_length = 4000
+    feature_dim = 40
 
-attention = SelfAttention(num_heads = 8, input_size=512, query_size=256, key_size=256, value_size=256)
+    data = torch.randn(batch_size, sequence_length, feature_dim)
 
-p_output = layers(data)
+    model = default_listen_and_attend_lstm_regression_network(0, use_logits=True)
 
-print(f"Data input sequence length = {data.size(1)}\nAttention input sequence length = {p_output.size(1)}")
-print(p_output.shape)
+    audio_regression_script(
+        ensemble=model,
+        optimizer=optim.SGD(model.parameters(), lr=0.001),
+        scheduler=None,
+        scheduler_epochs=[],
+        criterion=nn.CrossEntropyLoss(reduction='mean'),
+        train_dataloader=[{"padded_features": data, "labelled": torch.tensor([0, 1, 1, 0])}],
+        test_dataloader=[],
+        num_epochs=1,
+        is_regression=False,
+        target_attribute_name='labelled',
+        show_print=True,
+    )
 
-output = attention(p_output)
-print(output.shape)
+    import pdb; pdb.set_trace()

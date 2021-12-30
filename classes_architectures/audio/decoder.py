@@ -113,7 +113,10 @@ class FCDecoder(DecoderBase):
         super(FCDecoder, self).__init__(mean_first=mean_first)
         
         # nonlinearities[i] is placed after the layer that OUTPUTS layer_dims[i]
-        non_lin_dict = {'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'relu': nn.ReLU, 'none': EmptyLayer}
+        non_lin_dict = {
+            'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'relu': nn.ReLU, 
+            'softmax': lambda:nn.Softmax(dim=-1), 'none': EmptyLayer
+        }
         layers = [
             nn.Linear(embedding_dim, layer_dims[0]),
             non_lin_dict[nonlinearities[0]](),

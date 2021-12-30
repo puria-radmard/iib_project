@@ -8,7 +8,7 @@ from cifar_repo.utils.logger import Logger
 from cifar_repo.cifar import transform_test
 
 import active_learning as al
-from config.ootb_architectures.library import default_audio_unet_network, default_noskip_audio_unet_network
+from config.ootb_architectures import default_audio_unet_network, default_noskip_audio_unet_network
 
 from training_scripts.audio_training_scripts import train_autoencoder_ensemble
 from classes_losses.reconstrution import ReconstructionLoss

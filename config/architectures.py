@@ -1,12 +1,14 @@
 from classes_architectures.audio.encoder import *
 from classes_architectures.audio.decoder import *
-from classes_architectures.cifar.decoder import StaircaseConvolutionalDecoder
 from classes_architectures.cifar.encoder import *
 from classes_architectures.cifar.decoder import *
-from classes_architectures.cifar.encoder import NoSkipEncoder
 from classes_utils.layers import *
 
-from cifar_repo.cifar import make_model
+try:
+    from cifar_repo.cifar import make_model
+except:
+    def make_model(*args, **kwargs):
+        raise Exception('cifar library not found')
 
 moving_encoder_types = {
     "simple_sliding_nn": SimpleFeedForwardNNEncoder
@@ -17,7 +19,8 @@ encoder_types.update({
     "only_bidirectional_LSTM": BidirectionalLSTMOnlyAudioEncoder,
     "unet": UNetEncoder,
     "no_skip": NoSkipEncoder,
-    "pytorch-classification": make_model
+    "pytorch-classification": make_model,
+    "listen_and_attend_bLSTM": ListenAndAttendbLSTMFixedLengthEncoder
 })
 
 moving_decoder_types = {

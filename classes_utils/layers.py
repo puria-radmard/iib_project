@@ -89,3 +89,12 @@ class MultiplicativeGaussianLayer(nn.Module):
 
     def __call__(self, x: torch.Tensor, *args, **kwargs):
         return x * (self.a * torch.randn(*x.size(), device = device) + 1)
+
+
+class MeanLayer(nn.Module):
+    def __init__(self, dim):
+        super(MeanLayer, self).__init__()
+        self.dim = dim
+
+    def __call__(self, x):
+        return torch.mean(x, dim=self.dim)

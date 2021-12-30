@@ -6,7 +6,7 @@ device = (
 )
 from tqdm import tqdm
 
-def audio_uncertainty_regression_script(
+def audio_regression_script(
         ensemble,
         optimizer,
         scheduler,
@@ -15,6 +15,8 @@ def audio_uncertainty_regression_script(
         train_dataloader,
         test_dataloader,
         num_epochs,
+        target_attribute_name,
+        is_regression,
         show_print=True,
         dtype=DEFAULT_DTYPE
     ):
@@ -31,16 +33,20 @@ def audio_uncertainty_regression_script(
             optimizer.zero_grad()
             batch["padded_features"] = batch["padded_features"].to(dtype)
             features = batch["padded_features"].to(device)
-            targets = batch["targets"].to(dtype).to(device)
-            encodings, decodings = ensemble(features)
-            encodings = [e.to(dtype) for e in encodings]
+            targets = batch[target_attribute_name].to(dtype).to(device)
+            _, decodings = ensemble(features)
             decodings = [d.to(dtype) for d in decodings]
 
-            regression_loss = torch.sum(
-                torch.stack(
-                    [criterion(d.reshape(targets.shape), targets) for d in decodings]
-                )
-            )
+            if is_regression:
+                decodings = [d.reshape(targets.shape) for d in decodings]
+            
+            try:
+                targets = batch[target_attribute_name].to(dtype).to(device)
+                regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+            except:
+                targets = batch[target_attribute_name].to(device)
+                regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+            
             regression_loss.backward()
             optimizer.step()
 
@@ -54,17 +60,20 @@ def audio_uncertainty_regression_script(
 
             batch["padded_features"] = batch["padded_features"].to(dtype)
             features = batch["padded_features"].to(device)
-            targets = batch["targets"].to(device)
-            encodings, decodings = ensemble(features)
-            encodings = [e.to(dtype) for e in encodings]
+            targets = batch[target_attribute_name].to(device)
+            _, decodings = ensemble(features)
             decodings = [d.to(dtype) for d in decodings]
 
-            test_regression_loss = torch.sum(
-                torch.stack(
-                    [criterion(d.reshape(targets.shape), targets) for d in decodings]
-                )
-            )
-	        
+            if is_regression:
+                decodings = [d.reshape(targets.shape) for d in decodings]
+
+            try:
+                targets = batch[target_attribute_name].to(dtype).to(device)
+                test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+            except:
+                targets = batch[target_attribute_name].to(device)
+                test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+
             epoch_test_loss += test_regression_loss.item()
             test_batch_count += 1
 
