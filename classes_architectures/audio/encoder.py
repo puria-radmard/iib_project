@@ -1,6 +1,6 @@
 from torch import nn
 from torch.nn.modules.flatten import Flatten
-from classes_utils.audio.las.attention import SelfAttention
+from classes_utils.audio.las.attention import SelfAttention, SelfAttentionTranformerLayer
 from classes_utils.audio.las.pyramidal_network import pBLSTMLayer
 from util_functions.base import load_state_dict
 from classes_utils.layers import BidirectionalLSTMHiddenStateStacker, BidirectionalLSTMOutputSelector, MeanLayer
@@ -11,7 +11,8 @@ __all__ = [
     'BidirectionalLSTMAudioEncoder',
     'BidirectionalLSTMOnlyAudioEncoder',
     'SimpleFeedForwardNNEncoder',
-    'ListenAndAttendbLSTMFixedLengthEncoder'
+    'BLSTMListenerSelfAttentionEncoder',
+    'BLSTMListenerTransformerEncoder'
 ]
 
 
@@ -118,15 +119,30 @@ class BidirectionalLSTMOnlyAudioEncoder(StaticAudioEncoderBase):
         load_state_dict(self, weights_path)
 
 
-class ListenAndAttendbLSTMFixedLengthEncoder(StaticAudioEncoderBase):
+class BLSTMListenerSelfAttentionEncoder(StaticAudioEncoderBase):
     
-    def __init__(self, mfcc_dim, lstm_hidden_size, pyramid_size, key_size, query_size, value_size, num_heads, num_attn, variational):
+    def __init__(self, mfcc_dim, lstm_hidden_size, pyramid_size, key_size, query_size, value_size, num_heads, variational):
 
         layers = [pBLSTMLayer(input_size=mfcc_dim, hidden_size=lstm_hidden_size, num_layers=1, dropout=0.0)]
         layers += [pBLSTMLayer(input_size=lstm_hidden_size*2, hidden_size=lstm_hidden_size, num_layers=1, dropout=0.0)] * (pyramid_size-1)
-        layers += [SelfAttention(lstm_hidden_size*2, num_heads, query_size, key_size, value_size)] * num_attn
+        layers += [SelfAttention(lstm_hidden_size*2, num_heads, query_size, key_size, value_size)]
         layers += [MeanLayer(dim=1)]
         
         layers = nn.ModuleList(layers)
 
-        super(ListenAndAttendbLSTMFixedLengthEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, value_size)
+        super(BLSTMListenerSelfAttentionEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, value_size)
+
+
+class BLSTMListenerTransformerEncoder(StaticAudioEncoderBase):
+    
+    def __init__(self, mfcc_dim, pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, dropout, variational):
+
+        layers = [pBLSTMLayer(input_size=mfcc_dim, hidden_size=d_model//2, num_layers=1, dropout=dropout)]
+        layers += [pBLSTMLayer(input_size=d_model, hidden_size=d_model//2, num_layers=1, dropout=dropout)] * (pyramid_size-1)
+        layers += [SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes)] * num_attn_blocks
+        layers += [MeanLayer(dim=1)]
+        
+        layers = nn.ModuleList(layers)
+
+        super(BLSTMListenerTransformerEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, d_model)
+

@@ -114,10 +114,9 @@ def make_staircase_autoencoder_architecture(
     return autoencoder_ensemble
 
 
-def make_listen_and_attend_lstm_regression_architecture(
-        lstm_hidden_size, pyramid_size, key_size, value_size, query_size, num_heads, num_attn,
-        decoder_layer_dims, decoder_nonlinearities, decoder_dropout,
-        mfcc_dim=40
+def make_blstm_listener_self_attention_regression_architecture(
+        lstm_hidden_size, pyramid_size, key_size, value_size, query_size, num_heads,
+        decoder_layer_dims, decoder_nonlinearities, dropout, mfcc_dim=40
     ):
 
     encoder_ensemble_kwargs = {
@@ -128,21 +127,57 @@ def make_listen_and_attend_lstm_regression_architecture(
         "query_size": query_size,
         "value_size": value_size,
         "num_heads": num_heads,
-        "num_attn": num_attn,
         "variational": False
     }
 
     decoder_ensemble_kwargs = {
-        "embedding_dim": value_size, 
+        "embedding_dim": value_size*num_heads, 
         "layer_dims": decoder_layer_dims, 
         "nonlinearities": decoder_nonlinearities, 
-        "dropout_rate": decoder_dropout, 
+        "dropout_rate": dropout, 
         "mean_first": False
     }
 
     autoencoder_ensemble = EncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='listen_and_attend_bLSTM',
+        encoder_type='blstm_listener_self_attention',
+        decoder_type='fc_decoder',
+        ensemble_size=1,
+        encoder_ensemble_kwargs=encoder_ensemble_kwargs,
+        decoder_ensemble_kwargs=decoder_ensemble_kwargs,
+        mult_noise=0
+    )
+
+    return autoencoder_ensemble
+
+
+def make_blstm_listener_transformer_regression_architecture(
+        pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, 
+        decoder_layer_dims, decoder_nonlinearities, dropout, mfcc_dim=40
+    ):
+
+    encoder_ensemble_kwargs = {
+        "mfcc_dim": mfcc_dim,
+        "pyramid_size": pyramid_size,
+        "d_model": d_model,
+        "num_heads": num_heads,
+        "hidden_sizes": hidden_sizes,
+        "num_attn_blocks": num_attn_blocks,
+        "dropout": dropout,
+        "variational": False
+    }
+
+    decoder_ensemble_kwargs = {
+        "embedding_dim": d_model, 
+        "layer_dims": decoder_layer_dims, 
+        "nonlinearities": decoder_nonlinearities, 
+        "dropout_rate": dropout, 
+        "mean_first": False
+    }
+
+    autoencoder_ensemble = EncoderDecoderEnsemble(
+        ensemble_type='basic',
+        encoder_type='blstm_listener_transformer',
         decoder_type='fc_decoder',
         ensemble_size=1,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,

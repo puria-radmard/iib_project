@@ -1,8 +1,14 @@
 import sys, torch
 from torch import nn
+from classes_utils.layers import EmptyLayer
 from util_functions.base import load_state_dict
 from classes_architectures.base import DecoderBase
-from classes_utils.layers import EmptyLayer
+
+non_linearities_dict = {
+    'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'relu': nn.ReLU, 
+    'softmax': lambda:nn.Softmax(dim=-1), 'none': EmptyLayer
+}
+
 
 __all__ = [
     "BasicLSTMAudioDecoder",
@@ -113,19 +119,16 @@ class FCDecoder(DecoderBase):
         super(FCDecoder, self).__init__(mean_first=mean_first)
         
         # nonlinearities[i] is placed after the layer that OUTPUTS layer_dims[i]
-        non_lin_dict = {
-            'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'relu': nn.ReLU, 
-            'softmax': lambda:nn.Softmax(dim=-1), 'none': EmptyLayer
-        }
+        
         layers = [
             nn.Linear(embedding_dim, layer_dims[0]),
-            non_lin_dict[nonlinearities[0]](),
+            non_linearities_dict[nonlinearities[0]](),
             nn.Dropout(dropout_rate)
         ]
         for i, ld in enumerate(layer_dims[:-1]):
             layers.extend([
                 nn.Linear(ld, layer_dims[i+1]),
-                non_lin_dict[nonlinearities[i+1]](),
+                non_linearities_dict[nonlinearities[i+1]](),
                 nn.Dropout(dropout_rate)      
             ])
         # Do not apply dropout to final output layer

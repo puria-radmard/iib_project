@@ -22,7 +22,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/bi
 
 arch=$1
 lr=$2
-decoder_dropout=$3
+dropout=$3
 labelled_list=$4
 unlabelled_list=$5
 save_dir=$6
@@ -44,7 +44,7 @@ python -m interfaces.audio_labelled_classification \
     --lr                     $lr    \
     --scheduler_epochs       $scheduler_epochs  \
     --scheduler_proportion   $scheduler_proportion  \
-    --dropout                $decoder_dropout   \
+    --dropout                $dropout   \
     --weight_decay           $weight_decay    \
     --batch_size             $batch_size    \
     --num_epochs             $num_epochs    \

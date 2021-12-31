@@ -20,7 +20,8 @@ encoder_types.update({
     "unet": UNetEncoder,
     "no_skip": NoSkipEncoder,
     "pytorch-classification": make_model,
-    "listen_and_attend_bLSTM": ListenAndAttendbLSTMFixedLengthEncoder
+    "blstm_listener_self_attention": BLSTMListenerSelfAttentionEncoder,
+    "blstm_listener_transformer": BLSTMListenerTransformerEncoder
 })
 
 moving_decoder_types = {

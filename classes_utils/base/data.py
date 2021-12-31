@@ -71,10 +71,11 @@ class ClassificationDAFDataloader(DataLoader):
 
     def __iter__(self):
         if self.spent:
-            raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of date labelled vector')
+            pass
+            # raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of date labelled vector')
         else:
             self.spent = True
-            return super().__iter__()
+        return super().__iter__()
 
 
 if __name__ == '__main__':
