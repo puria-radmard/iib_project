@@ -1,5 +1,6 @@
 from glob import glob
 import os, json, argparse, subprocess
+from util_functions.base import config_savedir
 
 parser = argparse.ArgumentParser()
 
@@ -41,29 +42,9 @@ def save_indices_to_path(args, indices):
             f.write('\n')
     return save_path
 
-def config_savedir(args):
-  
-    i=0
-    while True:
-        try:
-            save_dir=f"{args.saveDir}-{i}"
-            os.mkdir(save_dir)
-            break
-        except:
-            i+=1
-        if i>50:
-            raise Exception("Too many folders!")
-
-    saveable_args = vars(args)
-    config_json_path = os.path.join(save_dir, "config.json")
-
-    with open(config_json_path, "w") as jfile:
-        json.dump(saveable_args, jfile)
-
-    return save_dir
 
 # Configure save dir and save configs
-args.saveDir = config_savedir(args)
+args.saveDir = config_savedir(args.saveDir, args)
 
 config_json_path = os.path.join(args.saveDir, "config.json")
 with open(config_json_path, "w") as jfile:

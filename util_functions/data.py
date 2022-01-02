@@ -1,9 +1,8 @@
-import pandas as pd
 import numpy as np
 from kaldiio import load_ark
-from tqdm import tqdm
 import torch
 from torch import nn
+from sklearn.model_selection import train_test_split
 
 __all__ = [
     "chunks",
@@ -19,9 +18,11 @@ __all__ = [
     "generate_word_indices",
     "generate_data_dict_words",
     "generate_data_dict_utt",
-    "split_data_dict",
+    "split_data_dict_by_labelled",
     "coll_fn_utt",
     "generate_coll_fn_simclr_utt",
+    'train_test_split_data_dict',
+    'combine_data_dicts'
 ]
 
 
@@ -83,7 +84,7 @@ def generate_data_dict_utt(features_paths, text_path=None):
     return {"utterance_segment_ids": utt_ids, "text": texts, "mfcc": utt_mfcc}
 
 
-def split_data_dict(data_dict, labelled_utt_list_path, unlabelled_utt_list_path):
+def split_data_dict_by_labelled(data_dict, labelled_utt_list_path, unlabelled_utt_list_path):
 
     with open(labelled_utt_list_path, "r") as f:
         labelled_utt_ids = set(f.read().split("\n")[:-1])
@@ -168,3 +169,22 @@ def get_certainties_from_multiple_ctms(alignment_paths):
         all_included_utts = all_included_utts.union(utts_in_file)
         certainty_dict.update(new_certainty_dict)
     return certainty_dict, all_included_utts
+
+
+def train_test_split_data_dict(data_dict, test_prop):
+    keys = list(data_dict.keys())
+    split_values = train_test_split(*[data_dict[k] for k in keys], test_size=test_prop)
+    new_values = zip(*(iter(split_values), ) * 2)
+    train_dict = {k: new_values[i][0] for i, k in enumerate(keys)}
+    test_dict = {k: new_values[i][1] for i, k in enumerate(keys)}
+    return train_dict, test_dict
+
+
+def combine_data_dicts(*dicts):
+    assert all(d.keys() == dicts[0].keys() for d in dicts)
+    out_dict = {k: [] for k in dicts[0].keys()}
+    for d in dicts:
+        [out_dict[k].extend(d[k]) for k in d.keys()]
+    return out_dict
+
+

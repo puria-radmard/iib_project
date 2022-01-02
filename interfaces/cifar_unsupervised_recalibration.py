@@ -13,7 +13,8 @@ from training_scripts.unsupervised_recalibration_scripts import unsupervised_rec
 from util_functions.data import *
 from config import metric_functions
 from torch.utils.data import DataLoader
-
+from util_functions.base import config_savedir
+from classes_utils.base.model import ModelWrapper
 
 
 device = (
@@ -54,20 +55,6 @@ parser.add_argument("--ensemble_size", required=False, default=1, type=int)
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M')
 
 
-class ModelWrapper(nn.Module):
-    def __init__(self, model):
-        super(ModelWrapper, self).__init__()
-        self.model = model
-        self.midloop = False
-    def forward(self, x, *args, **kwargs):
-        encodings, decodings = self.model(x)
-        if self.midloop:
-            # Training, so return logits
-            return encodings, decodings
-        else:
-            return {'last_logits': decodings, 'embeddings': encodings}
-
-
 def configure_autoencoder_caller(args):
 
     if args.compressed_net and not args.unet_skips:
@@ -85,31 +72,7 @@ def configure_autoencoder_caller(args):
     return autoencoder_ensemble_caller
 
 
-def config_savedir(args):
-  
-    i=0
-    while True:
-        try:
-            save_dir=f"{args.save_dir}-{i}"
-            os.mkdir(save_dir)
-            break
-        except:
-            i+=1
-        if i>50:
-            raise Exception("Too many folders!")
-
-    saveable_args = vars(args)
-    config_json_path = os.path.join(save_dir, "config.json")
-
-    print(f"Config dir : {save_dir}\n", flush=True)
-
-    with open(config_json_path, "w") as jfile:
-        json.dump(saveable_args, jfile)
-
-    return save_dir
-
-
-def set_up_active_learning(args):
+def set_up_active_learning(args, ):
 
     # This is for the basic daf case - needs to be parameterised
     encodings_criterion = None
@@ -202,7 +165,7 @@ if __name__ == '__main__':
     agent, train_image_dataset, round_cost, total_budget, \
         encodings_criterion, decodings_criterion, anchor_criterion = \
         set_up_active_learning(args)
-    save_dir = config_savedir(args)
+    save_dir = config_savedir(args.save_dir, args)
 
     print('Adding each round: ', round_cost, ' images')
     print('Will stop at: ', total_budget, ' images')

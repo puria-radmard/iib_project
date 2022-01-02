@@ -107,7 +107,7 @@ if __name__ == '__main__':
     data_dict = data_dict_length_split(data_dict, args.max_seq_len)
 
     print(f'splitting data into labelled and unlabelled')
-    labelled_data_dict, unlabelled_data_dict = split_data_dict(
+    labelled_data_dict, unlabelled_data_dict = split_data_dict_by_labelled(
         data_dict, args.labelled_utt_list_path, args.unlabelled_utt_list_path
     )
 

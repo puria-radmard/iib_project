@@ -26,7 +26,7 @@ num_epochs=$3
 cell_type=$4
 alignment_paths=`echo "$5" | tr , " "`
 
-python -m interfaces.uncertainty_audio_regression \
+python -m interfaces.audio_uncertainty_regression \
     --cell_type $cell_type \
     --architecture_name architecture \
     --lr $lr \

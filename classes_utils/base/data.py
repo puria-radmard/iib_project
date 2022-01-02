@@ -61,18 +61,20 @@ class EvenBinaryClassificationBatchSampler(Sampler):
 
 
 class ClassificationDAFDataloader(DataLoader):
-    def __init__(self, dataset, **kwargs):
+    def __init__(self, dataset, collate_fn=coll_fn_utt, **kwargs):
         batch_sampler = EvenBinaryClassificationBatchSampler(
             data_source=dataset, batch_size=kwargs['batch_size'], class1_indices=dataset.indices
         )
         del kwargs['shuffle'], kwargs['batch_size']
         self.spent = False
-        super(ClassificationDAFDataloader, self).__init__(dataset, batch_sampler=batch_sampler, **kwargs)
+        super(ClassificationDAFDataloader, self).__init__(
+            dataset, batch_sampler=batch_sampler, collate_fn=collate_fn, **kwargs
+        )
 
     def __iter__(self):
         if self.spent:
             pass
-            # raise Exception('ClassificationDAFDataloader can only be used once, to prevent out of date labelled vector')
+            # raise Exception('Classification DAF Dataloader can only be used once, to prevent out of date labelled vector')
         else:
             self.spent = True
         return super().__iter__()
@@ -87,12 +89,7 @@ if __name__ == '__main__':
     dataset = _make_test_labelled_classification_dataset(1000)
     batch_size = 64
 
-    dataloader = ClassificationDAFDataloader(
-        dataset,
-        collate_fn=coll_fn_utt,
-        batch_size=batch_size,
-        shuffle=True,
-    )
+    dataloader = ClassificationDAFDataloader(dataset, batch_size=batch_size)
 
     for batch in dataloader:
         print(batch['labelled'].sum()/batch['labelled'].size(0))
@@ -100,7 +97,7 @@ if __name__ == '__main__':
     print(f"Size of dataset: {len(dataset)}")
     print(f"Of which class 1 (labelled): {len(dataset.indices)}")
     print(f"Effective length: {len(dataset.indices)*2}, in {len(dataset.indices)*2/batch_size} batches")
-    print(f"ClassificationDAFDataloader length: {len(dataloader)} batches")
+    print(f"Classification DAF Dataloader length: {len(dataloader)} batches")
 
     import pdb; pdb.set_trace()
 

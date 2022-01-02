@@ -1,4 +1,4 @@
-run_script="/home/alta/BLTSpeaking/exp-pr450/shell_scripts/uncertainty_audio_regression_scripts/run_train_uncertainty_regression.sh"
+run_script="/home/alta/BLTSpeaking/exp-pr450/shell_scripts/audio_uncertainty_regression_scripts/run_train_uncertainty_regression.sh"
 txt_base="/home/alta/BLTSpeaking/exp-pr450/logs/uncertainty_regression/regression_sweep"
 alignment_base="/home/alta/BLTSpeaking/active_learning-pr450/models/baseline/CTDF1_b50/tdnn-f"
 alignment_paths="${alignment_base}/decode_LM1-int_b50.BLXXXeval3/score_mbr_10/BLXXXeval3.utt.map.ctm,${alignment_base}/decode_LM1-int_b50.unlabelled_b50/score_mbr_10/unlabelled_b50.utt.map.ctm"
@@ -9,7 +9,7 @@ alignment_paths="${alignment_base}/decode_LM1-int_b50.BLXXXeval3/score_mbr_10/BL
 # cell_type=$4
 # alignment_paths=`echo "$5" | tr , " "`
 
-#run_script="/home/alta/BLTSpeaking/exp-pr450/shell_scripts/uncertainty_audio_regression_scripts/train_uncertainty_regression.sh"
+#run_script="/home/alta/BLTSpeaking/exp-pr450/shell_scripts/audio_uncertainty_regression_scripts/train_uncertainty_regression.sh"
 #txt_base=
 
 $run_script ${txt_base}_01.txt 0.0001 short_recurrent_regression_network 10 gru $alignment_paths

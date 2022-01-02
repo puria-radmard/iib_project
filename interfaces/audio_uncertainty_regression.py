@@ -7,6 +7,7 @@ from training_scripts.audio_regression_scripts import audio_regression_script
 from util_functions.data import *
 from config import device
 import argparse
+from util_functions.base import config_savedir
 
 if __name__ == '__main__':
 
@@ -77,24 +78,7 @@ if __name__ == '__main__':
 
     print('DONE CONFIGURING DATA\n', flush=True)
 
-    i=0
-    while True:
-        try:
-            save_dir=f"{args.save_dir}-{i}"
-            os.mkdir(save_dir)
-            break
-        except:
-            i+=1
-        if i>50:
-            raise Exception("Too many folders!")
-
-    saveable_args = vars(args)
-    config_json_path = os.path.join(save_dir, "config.json")
-
-    print(f"Config dir : {save_dir}\n", flush=True)
-
-    with open(config_json_path, "w") as jfile:
-        json.dump(saveable_args, jfile)
+    save_dir = config_savedir(args.save_dir, args)
 
     model, results = audio_regression_script(
         ensemble=model,

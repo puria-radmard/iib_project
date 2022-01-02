@@ -1,7 +1,7 @@
 import os, torch
-from torch import nn
-from torch.nn.init import xavier_normal_, zeros_
 import json
+
+from interfaces.daf_acquisition_queuer import config_savedir
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 # from util_functions.data import generate_data_dict_words, generate_coll_fn_simclr_utt
@@ -35,3 +35,27 @@ def batch_trace(x):
 
 def batch_outer(z_i, z):
     return torch.einsum("bi,bj->bij", (z_i - z, z_i, z))
+
+
+def config_savedir(base_save_dir, args):
+  
+    i=0
+    while True:
+        try:
+            save_dir=f"{base_save_dir}-{i}"
+            os.mkdir(save_dir)
+            break
+        except:
+            i+=1
+        if i>50:
+            raise Exception("Too many folders!")
+
+    saveable_args = vars(args)
+    config_json_path = os.path.join(save_dir, "config.json")
+
+    with open(config_json_path, "w") as jfile:
+        json.dump(saveable_args, jfile)
+
+    print(f"Config dir : {save_dir}\n", flush=True)
+
+    return save_dir

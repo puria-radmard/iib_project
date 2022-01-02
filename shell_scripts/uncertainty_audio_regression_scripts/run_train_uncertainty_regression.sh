@@ -4,7 +4,7 @@ set ALLARGS = ($*)
 
 touch $1
 set LOG=$1
-set TRAIN='/home/alta/BLTSpeaking/exp-pr450/shell_scripts/uncertainty_audio_regression_scripts/train_uncertainty_regression.sh'
+set TRAIN='/home/alta/BLTSpeaking/exp-pr450/shell_scripts/audio_uncertainty_regression_scripts/train_uncertainty_regression.sh'
 
 set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass='*' -l osrel='*' -l hostname='\\!air209.eng.cam.ac.uk' $TRAIN $2 $3 $4 $5 $6`
 

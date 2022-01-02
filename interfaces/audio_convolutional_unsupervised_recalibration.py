@@ -71,20 +71,6 @@ parser.add_argument("--use_dim_stds", required=False, default=True)
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M')
 
 
-class ModelWrapper(nn.Module):
-    def __init__(self, model):
-        super(ModelWrapper, self).__init__()
-        self.model = model
-        self.midloop = False
-    def forward(self, x, *args, **kwargs):
-        encodings, decodings = self.model(x)
-        if self.midloop:
-            # Training, so return logits
-            return encodings, decodings
-        else:
-            return {'last_logits': decodings, 'embeddings': encodings}
-
-
 def set_up_active_learning(args):
 
     # This is for the basic daf case - needs to be parameterised
@@ -109,7 +95,7 @@ def set_up_active_learning(args):
     data_dict = data_dict_length_split(data_dict, args.max_seq_len)
 
     print(f'splitting data into labelled and unlabelled')
-    labelled_data_dict, unlabelled_data_dict = split_data_dict(
+    labelled_data_dict, unlabelled_data_dict = split_data_dict_by_labelled(
         data_dict, args.labelled_utt_list_path, args.unlabelled_utt_list_path
     )
 
