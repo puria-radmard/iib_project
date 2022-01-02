@@ -1,13 +1,14 @@
 **/__pycache__
+**/.ipynb_checkpoints
 
-.ipynb_checkpoints
 cifar_repo
 audio_autoencoder
 
 *.ipynb
 old*
-*logs
+logs
 data/*
+archive/old_logs
 logs
 
 **.pyc
