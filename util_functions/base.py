@@ -1,12 +1,7 @@
 import os, torch
 import json
 
-from interfaces.daf_acquisition_queuer import config_savedir
-
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-# from util_functions.data import generate_data_dict_words, generate_coll_fn_simclr_utt
-
-# from util_functions.bert import get_all_sentences, pretrain_bert, generate_word_embedding_cache
 
 
 def load_state_dict(model, weights_path):

@@ -132,13 +132,13 @@ def coll_fn_utt(instances):
     audio = [torch.tensor(ins["audio"]) for ins in instances]
     packed_audio = nn.utils.rnn.pack_sequence(audio, enforce_sorted=False)
     padded, lengths = nn.utils.rnn.pad_packed_sequence(packed_audio, batch_first=True)
-    res["audio"] = padded
+    res["padded_features"] = padded
     return res
 
 
 def coll_fn_utt_with_channel_insersion(instances):
     res = coll_fn_utt(instances)
-    res["audio"] = res["audio"][:,None]
+    res["padded_features"] = res["padded_features"][:,None]
     return res
 
 
@@ -174,7 +174,7 @@ def get_certainties_from_multiple_ctms(alignment_paths):
 def train_test_split_data_dict(data_dict, test_prop):
     keys = list(data_dict.keys())
     split_values = train_test_split(*[data_dict[k] for k in keys], test_size=test_prop)
-    new_values = zip(*(iter(split_values), ) * 2)
+    new_values = list(zip(*(iter(split_values), ) * 2))
     train_dict = {k: new_values[i][0] for i, k in enumerate(keys)}
     test_dict = {k: new_values[i][1] for i, k in enumerate(keys)}
     return train_dict, test_dict

@@ -1,8 +1,7 @@
-from math import ceil, floor
 import random
 import torch
-from torch.utils.data import DataLoader, Sampler, BatchSampler
-import numpy as np
+from torch.utils.data import DataLoader, Sampler
+from util_functions.data import coll_fn_utt
 
 
 class EvenBinaryClassificationBatchSampler(Sampler):
@@ -65,7 +64,7 @@ class ClassificationDAFDataloader(DataLoader):
         batch_sampler = EvenBinaryClassificationBatchSampler(
             data_source=dataset, batch_size=kwargs['batch_size'], class1_indices=dataset.indices
         )
-        del kwargs['shuffle'], kwargs['batch_size']
+        del kwargs['batch_size']
         self.spent = False
         super(ClassificationDAFDataloader, self).__init__(
             dataset, batch_sampler=batch_sampler, collate_fn=collate_fn, **kwargs

@@ -31,7 +31,10 @@ class pBLSTMLayer(nn.Module):
     def forward(self, x):
         batch, dur, feat = x.shape
         time_reduc = int(dur / 2)
-        input_xr = x.contiguous().view(batch, time_reduc, feat * 2)
+        try:
+            input_xr = x.contiguous().view(batch, time_reduc, feat * 2)
+        except:
+            import pdb; pdb.set_trace()
         output, hidden = self.BLSTM(input_xr)
         return output# , hidden
 
@@ -49,3 +52,14 @@ class pLSTMOutputExtractor(nn.Module):
         return output
 
 
+class PrepForPyramid(nn.Module):
+
+    def __init__(self, pyramid_size:int, layer_reduction:int=2):
+        self.factor = layer_reduction**pyramid_size
+        super(PrepForPyramid, self).__init__()
+
+    def forward(self, x):
+        B, L, *pad_shape = x.shape
+        frames_to_add = self.factor - (L % self.factor)
+        padding = torch.zeros(B, frames_to_add, *pad_shape, dtype=x.dtype)
+        return torch.hstack([x, padding])

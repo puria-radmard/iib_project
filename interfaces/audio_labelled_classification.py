@@ -22,8 +22,8 @@ parser.add_argument("--weight_decay",required=True,type=float)
 parser.add_argument("--batch_size", required=True, type=int)
 parser.add_argument("--num_epochs", required=True, type=int)
 parser.add_argument("--features_paths",required=True,nargs="+",help="List of paths where .ark files are")
-parser.add_argument("--labelled_list",required=True,nargs="+",help="Path to list of labelled utts")
-parser.add_argument("--unlabelled_list",required=True,nargs="+",help="Path to list of unlabelled utts")
+parser.add_argument("--labelled_list",required=True,type=str,help="Path to list of labelled utts")
+parser.add_argument("--unlabelled_list",required=True,type=str,help="Path to list of unlabelled utts")
 parser.add_argument("--max_seq_len",required=True,type=int)
 parser.add_argument("--test_prop",required=True,type=float)
 parser.add_argument("--save_dir", required=False, default=None)
@@ -72,9 +72,6 @@ if __name__ == '__main__':
     # Put datasets into dataloaders
     train_dataloader = ClassificationDAFDataloader(train_dataset, batch_size=args.batch_size)
     test_dataloader = ClassificationDAFDataloader(test_dataset, batch_size=args.batch_size)
-
-    print('check that splitting & labelled indexing is done properly here!')
-    import pdb; pdb.set_trace()
 
     save_dir = config_savedir(args.save_dir, args)
 

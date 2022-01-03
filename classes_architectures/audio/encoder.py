@@ -1,7 +1,7 @@
 from torch import nn
 from torch.nn.modules.flatten import Flatten
 from classes_utils.audio.las.attention import SelfAttention, SelfAttentionTranformerLayer
-from classes_utils.audio.las.pyramidal_network import pBLSTMLayer
+from classes_utils.audio.las.pyramidal_network import pBLSTMLayer, PrepForPyramid
 from util_functions.base import load_state_dict
 from classes_utils.layers import BidirectionalLSTMHiddenStateStacker, BidirectionalLSTMOutputSelector, MeanLayer
 from classes_architectures.base import StaticAudioEncoderBase, MovingAudioEncoderBase
@@ -123,7 +123,8 @@ class BLSTMListenerSelfAttentionEncoder(StaticAudioEncoderBase):
     
     def __init__(self, mfcc_dim, lstm_hidden_size, pyramid_size, key_size, query_size, value_size, num_heads, variational):
 
-        layers = [pBLSTMLayer(input_size=mfcc_dim, hidden_size=lstm_hidden_size, num_layers=1, dropout=0.0)]
+        layers = [PrepForPyramid(pyramid_size=pyramid_size)]
+        layers += [pBLSTMLayer(input_size=mfcc_dim, hidden_size=lstm_hidden_size, num_layers=1, dropout=0.0)]
         layers += [pBLSTMLayer(input_size=lstm_hidden_size*2, hidden_size=lstm_hidden_size, num_layers=1, dropout=0.0)] * (pyramid_size-1)
         layers += [SelfAttention(lstm_hidden_size*2, num_heads, query_size, key_size, value_size)]
         layers += [MeanLayer(dim=1)]
@@ -137,7 +138,8 @@ class BLSTMListenerTransformerEncoder(StaticAudioEncoderBase):
     
     def __init__(self, mfcc_dim, pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, dropout, variational):
 
-        layers = [pBLSTMLayer(input_size=mfcc_dim, hidden_size=d_model//2, num_layers=1, dropout=dropout)]
+        layers = [PrepForPyramid(pyramid_size=pyramid_size)]
+        layers += [pBLSTMLayer(input_size=mfcc_dim, hidden_size=d_model//2, num_layers=1, dropout=dropout)]
         layers += [pBLSTMLayer(input_size=d_model, hidden_size=d_model//2, num_layers=1, dropout=dropout)] * (pyramid_size-1)
         layers += [SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes)] * num_attn_blocks
         layers += [MeanLayer(dim=1)]
