@@ -6,5 +6,6 @@ metric_functions = {
     'image_reconstruction': AverageOfReconstructionLossesMetric,
     'l1': ReconstructionLossOfAverageMetric,
     'l2': AverageOfReconstructionLossesMetric,
-    'l3': ReconstructionDisagreementMetric
+    'l3': ReconstructionDisagreementMetric,
+    'classification': LabelledRankMetric
 }

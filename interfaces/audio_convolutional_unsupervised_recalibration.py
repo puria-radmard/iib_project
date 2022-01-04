@@ -16,7 +16,7 @@ from classes_utils.audio.data import SubsetAudioUtteranceDataset
 from classes_utils.architecture import SkipEncoderDecoderEnsemble
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
 from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
-from training_scripts.unsupervised_recalibration_scripts import unsupervised_recalibration_script
+from training_scripts.recalibration_scripts import unsupervised_recalibration_script
 from util_functions.data import *
 from config import metric_functions
 from torch.utils.data import DataLoader
@@ -62,7 +62,7 @@ parser.add_argument("--data_dict_path",required=False,help="Pre-prepared data_di
 parser.add_argument("--features_paths",required=False,nargs="+",help="List of paths where .ark files are")
 parser.add_argument('--do_reinitialise_autoencoder_ensemble', dest='reinitialise_autoencoder_ensemble', action='store_true')
 parser.add_argument('--do_not_reinitialise_autoencoder_ensemble', dest='reinitialise_autoencoder_ensemble', action='store_false')
-parser.set_defaults(reinitialise_autoencoder_ensemble=False)
+parser.set_defaults(reinitialise_autoencoder_ensemble=True)
 parser.add_argument("--max_seq_len",required=True,type=int)
 parser.add_argument("--save_dir", required=False, default=None)
 parser.add_argument("--ensemble_size", required=False, default=1, type=int)

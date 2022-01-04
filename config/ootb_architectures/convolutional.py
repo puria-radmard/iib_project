@@ -5,9 +5,10 @@ from classes_architectures.cifar.decoder import (
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_OUT_CHANNELS, DEFAULT_UNET_ENCODER_STRIDES
 from config.ootb_architectures.creation_functions import make_unet_architecture, make_staircase_autoencoder_architecture
 
+
 def default_unet_network():
     return make_unet_architecture(
-        encoder_out_channel_list=DEFAULT_UNET_DECODER_OUT_CHANNELS, 
+        encoder_out_channel_list=DEFAULT_UNET_ENCODER_OUT_CHANNELS, 
         encoder_kernel_size_list=DEFAULT_UNET_ENCODER_KERNEL_SIZES, 
         encoder_stride_list=DEFAULT_UNET_ENCODER_STRIDES,
         decoder_out_channel_list=DEFAULT_UNET_DECODER_OUT_CHANNELS,
@@ -65,6 +66,7 @@ def default_audio_unet_network():
         output_channels=1,
     )
 
+
 def default_noskip_audio_unet_network():
     return make_unet_architecture(
         encoder_out_channel_list=DEFAULT_UNET_ENCODER_OUT_CHANNELS[:-1],
@@ -78,3 +80,4 @@ def default_noskip_audio_unet_network():
         decoder_concat_list=[-1, -1, -1],
         output_channels=1,
     )
+

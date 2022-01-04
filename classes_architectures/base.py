@@ -81,7 +81,7 @@ class ImageEncoderBase(EncoderBase):
     def __init__(self, input_size, layers, dropout_idxs, noise_idx, variational, embedding_dim, return_skips):
         self.input_size=input_size
         super(ImageEncoderBase, self).__init__(
-            layers, dropout_idxs, noise_idx, variational, embedding_dim, EmptyLayer(), return_skips
+            layers, dropout_idxs, noise_idx, variational, embedding_dim, return_skips
         )
 
 

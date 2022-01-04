@@ -1,7 +1,7 @@
 import os, json, pickle, torch
 import matplotlib.pyplot as plt
 import seaborn as sns
-from training_scripts.cifar_autoencoder_scripts import train_autoencoder_ensemble
+from training_scripts.cifar_daf_scripts import train_autoencoder_ensemble, train_daf_labelled_classification
 
 sns.set_style('darkgrid')
 
@@ -125,6 +125,103 @@ def unsupervised_recalibration_script(
             finetune_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.finetune_lr, \
                 momentum=args.momentum, weight_decay=args.finetune_weight_decay)
             agent.model, results = train_autoencoder_ensemble(
+                ensemble=agent.model,
+                optimizer=finetune_optimizer,
+                scheduler=None,
+                scheduler_epochs=[],
+                encodings_criterion=encodings_criterion,
+                decodings_criterion=decodings_criterion,
+                anchor_criterion=anchor_criterion,
+                train_dataloader=train_dataloader,
+                test_dataloader=[],
+                num_epochs=args.num_finetune_epochs,
+            )
+            
+        results_path = os.path.join(save_dir, f'round_{round_num}_results.json')
+        with open(results_path, 'w') as jfile:
+            json.dump(results, jfile)
+
+        # Need to return attribute dictionary while for active learning agent
+        agent.model.midloop = False
+
+        # When this loop ends, model attributes and scores are updated, using a model that is trained on everything so far
+        # So we need to visualise the distributions after this point
+
+    return agent
+
+
+def labelled_classification_recalibration_script(
+        agent, args, model_init_method, dataloader_init_method,
+        train_dataset, encodings_criterion, decodings_criterion, 
+        anchor_criterion, save_dir, device
+    ):
+
+    print('WARNING: Please check that agent is initialised before labelled_classification_recalibration_script is called!')
+
+    round_num = 0
+    # Keep track of the images we have already trained on
+    # At each finetuning stage we finetune only on the added set
+    previously_trained_indices = set()
+
+    for _ in agent:
+
+        # Lag in when the metric values are actually updated!
+        if round_num > 0:
+            make_metric_dictionary(agent.selector.all_round_windows, round_num, previously_trained_indices, set(new_indices), save_dir)
+
+        previously_trained_indices, new_indices = update_indices(previously_trained_indices, agent)
+        
+        ## Sanity check on this
+        # unlabelled_scores = list(filter(lambda x: x.i not in previously_trained_indices, agent.selector.all_round_windows))
+        # unlabelled_scores = sorted(unlabelled_scores, key=lambda w: w.score, reverse = True)
+        # set(map(lambda x: x.i, unlabelled_scores[:500])) == set(new_indices)
+
+        if args.reinitialise_autoencoder_ensemble:
+            # Reinit - we finetune on all data so far
+            train_dataset.indices = set(previously_trained_indices)
+        else:
+            # Don't reinit - we only finetune on unseen data
+            train_dataset.indices = set(new_indices)
+        # train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        train_dataloader = dataloader_init_method(train_dataset, batch_size=args.batch_size)
+
+        # Make logging path based on save_dir
+        round_num += 1
+
+        with open(os.path.join(save_dir, f'labelled_set_{round_num}.txt'), 'w') as f:
+            for i in new_indices:
+                f.write(str(i))
+                f.write('\n')
+
+        print(f'\n\nRound: {round_num} | {len(train_dataset)} labelled')
+
+        if args.reinitialise_autoencoder_ensemble or round_num == 1:
+            agent.model.model = model_init_method()
+            agent.model = agent.model.to(device)
+
+        # Need to return logits drectly while in training/val script
+        agent.model.midloop = True
+
+        if round_num == 1:
+            initial_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.initial_lr, \
+                momentum=args.momentum, weight_decay=args.weight_decay)
+            agent.model, results = train_daf_labelled_classification(
+                ensemble=agent.model,
+                optimizer=initial_optimizer,
+                scheduler=None,
+                scheduler_epochs=[],
+                encodings_criterion=encodings_criterion,
+                decodings_criterion=decodings_criterion,
+                anchor_criterion=anchor_criterion,
+                train_dataloader=train_dataloader,
+                test_dataloader=[],
+                num_epochs=args.num_initial_epochs,
+            )
+
+        else:
+            finetune_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.finetune_lr, \
+                momentum=args.momentum, weight_decay=args.finetune_weight_decay)
+            agent.model, results = train_daf_labelled_classification(
                 ensemble=agent.model,
                 optimizer=finetune_optimizer,
                 scheduler=None,

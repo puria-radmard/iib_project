@@ -3,9 +3,9 @@ from torch import nn
 from classes_utils.audio.data import LabelledClassificationAudioUtteranceDataset
 from classes_utils.base.data import ClassificationDAFDataloader
 from training_scripts.audio_regression_scripts import audio_regression_script
-from config.ootb_architectures import listen_and_attend
+from config.ootb_architectures import listen_and_attend_classification
 from util_functions.data import (
-    train_test_split_data_dict, coll_fn_utt, generate_data_dict_utt, 
+    train_test_split_data_dict,generate_data_dict_utt, 
     combine_data_dicts, data_dict_length_split, split_data_dict_by_labelled
 )
 from config import *
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # Make training objects
-    model = getattr(listen_and_attend, args.architecture_name)(args.dropout, use_logits = True)
+    model = getattr(listen_and_attend_classification, args.architecture_name)(args.dropout, use_logits = True)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=1, gamma=args.scheduler_proportion)
     criterion = nn.CrossEntropyLoss(reduction='mean')

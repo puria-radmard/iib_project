@@ -7,9 +7,9 @@ from cifar_repo.cifar import transform_test
 import active_learning as al
 
 from classes_losses.reconstrution import ImageReconstructionLoss
-from classes_utils.cifar.data import CIFAR100Subset, CIFAR10Subset
+from classes_utils.cifar.data import CIFAR100LabelledClassification, CIFAR100Subset, CIFAR10LabelledClassification, CIFAR10Subset
 from config.ootb_architectures import default_staircase_network, default_unet_network, no_skip_default_unet_network
-from training_scripts.unsupervised_recalibration_scripts import unsupervised_recalibration_script
+from training_scripts.recalibration_scripts import unsupervised_recalibration_script
 from util_functions.data import *
 from config import metric_functions
 from torch.utils.data import DataLoader
@@ -49,7 +49,7 @@ parser.add_argument("--num_initial_epochs", required=True, type=int)
 parser.add_argument("--num_finetune_epochs", required=True, type=int)
 parser.add_argument('--do_reinitialise_autoencoder_ensemble', dest='reinitialise_autoencoder_ensemble', action='store_true')
 parser.add_argument('--do_not_reinitialise_autoencoder_ensemble', dest='reinitialise_autoencoder_ensemble', action='store_false')
-parser.set_defaults(reinitialise_autoencoder_ensemble=False)
+parser.set_defaults(reinitialise_autoencoder_ensemble=True)
 parser.add_argument("--save_dir", required=False, default=None)
 parser.add_argument("--ensemble_size", required=False, default=1, type=int)
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M')
@@ -72,7 +72,7 @@ def configure_autoencoder_caller(args):
     return autoencoder_ensemble_caller
 
 
-def set_up_active_learning(args, ):
+def set_up_active_learning(args, classification):
 
     # This is for the basic daf case - needs to be parameterised
     encodings_criterion = None
@@ -81,10 +81,10 @@ def set_up_active_learning(args, ):
 
     # Select dataset
     if args.dataset == 'cifar10':
-        cifar_dataset = CIFAR10Subset
+        cifar_dataset = CIFAR10LabelledClassification if classification else CIFAR10Subset
         print('Using cifar10')
     elif args.dataset == 'cifar100':
-        cifar_dataset = CIFAR100Subset
+        cifar_dataset = CIFAR100LabelledClassification if classification else CIFAR100Subset
         print('Using cifar100')
 
     # Don't want augmentation, just want normalisation
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     agent, train_image_dataset, round_cost, total_budget, \
         encodings_criterion, decodings_criterion, anchor_criterion = \
-        set_up_active_learning(args)
+        set_up_active_learning(args, classification=False)
     save_dir = config_savedir(args.save_dir, args)
 
     print('Adding each round: ', round_cost, ' images')

@@ -11,7 +11,7 @@ from classes_utils.cifar.data import CIFAR100Subset, CIFAR10Subset
 from classes_utils.architecture import SkipEncoderDecoderEnsemble, EncoderDecoderEnsemble
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
 from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
-from training_scripts.cifar_autoencoder_scripts import train_autoencoder_ensemble
+from training_scripts.cifar_daf_scripts import train_autoencoder_ensemble
 from util_functions.data import *
 from config import metric_functions
 

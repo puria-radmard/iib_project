@@ -42,6 +42,7 @@ class AudioUtteranceDataset(torch.utils.data.Dataset):
         return self.dim_means[speaker_id], self.dim_stds[speaker_id]
 
     def pop(self, utt_id):
+        raise Exception('Include all attributes')
         new_audio, new_utt_ids, new_text = [], [], []
         rem_audio, rem_utt_ids, rem_text = [], [], []
         for a, u, t in zip(self.audio, self.utt_ids, self.text):
@@ -59,6 +60,7 @@ class AudioUtteranceDataset(torch.utils.data.Dataset):
         return rem_audio, rem_utt_ids, rem_text
     
     def push(self, audios, utt_ids, texts):
+        raise Exception('Include all attributes')
         for audio, utt_id, text in zip(audios, utt_ids, texts):
             self.audio.append(audio)
             self.utt_ids.append(utt_id)

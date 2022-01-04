@@ -103,3 +103,19 @@ class ReconstructionDisagreementMetric(UnitwiseAcquisition):
 
     def score(self, batch_indices):
         return self.l2.score(batch_indices) - self.l1.score(batch_indices)
+
+
+class LabelledRankMetric(UnitwiseAcquisition):
+    """
+    This is the metric for labelled classification DAFs
+    These DAFs predict lablled examples as 1, and unlabelled ones as 0
+        => this metric simply selects the lowest scoring ones highest
+    """
+
+    def __init__(self, dataset):
+        super().__init__(dataset)
+    
+    def score(self, batch_indices):
+        preds = [self.dataset.last_logits[i] for i in batch_indices]
+        ret_func = lambda x: - x.item()
+        return list(map(ret_func, preds))
