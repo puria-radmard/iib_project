@@ -33,7 +33,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # Make training objects
-    model = getattr(listen_and_attend_classification, args.architecture_name)(args.dropout, use_logits = True)
+    model = getattr(listen_and_attend_classification, args.architecture_name)(args.dropout, use_logits = True).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=1, gamma=args.scheduler_proportion)
     criterion = nn.CrossEntropyLoss(reduction='mean')

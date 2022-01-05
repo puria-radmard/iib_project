@@ -62,4 +62,4 @@ class PrepForPyramid(nn.Module):
         B, L, *pad_shape = x.shape
         frames_to_add = self.factor - (L % self.factor)
         padding = torch.zeros(B, frames_to_add, *pad_shape, dtype=x.dtype)
-        return torch.hstack([x, padding])
+        return torch.hstack([x, padding.to(x.device)])

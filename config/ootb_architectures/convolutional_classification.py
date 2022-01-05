@@ -1,5 +1,15 @@
+from torch import nn
+from cifar_repo.models.cifar import densenet, resnet
 from config.ootb_architectures.creation_functions import make_unet_regression_architecture
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_OUT_CHANNELS, DEFAULT_UNET_ENCODER_STRIDES
+
+class InterfaceFriendlyModel(nn.Module):
+    def __init__(self, model):
+        self.model = model
+    def forward(self, *args, **kwargs):
+        output = self.model(*args, **kwargs)
+        return ([None], [output])
+
 
 def default_simple_cifar_convolutional_classifier(dropout, use_logits):
     return make_unet_regression_architecture(
@@ -14,6 +24,19 @@ def default_simple_cifar_convolutional_classifier(dropout, use_logits):
         mult_noise=0,
         variational=False
     )
+
+
+def default_mini_resnet_classifier(*args, **kwargs):
+    model = resnet(depth=0)
+    print('Total miniature resnet DAF params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+    return InterfaceFriendlyModel(model)
+
+
+def default_mini_densenet_classifier(dropout, *args, **kwargs):
+    model = densenet(num_classes=2, depth=4, growthRate=12, dropRate=dropout)
+    print('Total miniature densenet DAF params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+    return InterfaceFriendlyModel(model)
+
 
 
 if __name__ == '__main__':

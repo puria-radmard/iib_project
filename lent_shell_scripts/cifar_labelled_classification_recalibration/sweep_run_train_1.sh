@@ -18,9 +18,23 @@ fi;
 
 # dataset=$1
 # architecture_name=$2
+    # default_simple_cifar_convolutional_classifier
+    # default_mini_resnet_classifier
+    # default_mini_densenet_classifier
 # minibatch_prop=$3
 # initial_lr=$4
 # num_initial_epochs=$5
 # save_dir=$6
 
-$run_path ${txt_base}_01.txt default_simple_cifar_convolutional_classifier 0.01 0.001 30 $save_dir_base
+
+
+$run_path ${txt_base}_01.txt default_simple_cifar_convolutional_classifier  0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_02.txt default_mini_resnet_classifier                 0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_03.txt default_mini_densenet_classifier               0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_04.txt default_simple_cifar_convolutional_classifier  0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_05.txt default_mini_resnet_classifier                 0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_06.txt default_mini_densenet_classifier               0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_07.txt default_simple_cifar_convolutional_classifier  0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_08.txt default_mini_resnet_classifier                 0.01 0.001 30 $save_dir_base
+$run_path ${txt_base}_09.txt default_mini_densenet_classifier               0.01 0.001 30 $save_dir_base
+
