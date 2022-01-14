@@ -38,7 +38,7 @@ def no_skip_default_unet_network():
 
 def default_staircase_network():
     return make_staircase_autoencoder_architecture(
-        encoder_out_channel_lis=[16, 24, 128],
+        encoder_out_channel_list=[16, 24, 128],
         encoder_kernel_size_list=[3, 3, 3],
         encoder_stride_list=[2, 2, 2],
         encoder_fc_sizes=[],

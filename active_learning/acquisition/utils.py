@@ -93,7 +93,7 @@ class BatchAcquisition:
     def __init__(self, dataset):
         self.dataset = dataset
 
-    def select_next_subset(self, candidate_windows, batchsize):
+    def select_next_subset(self, candidate_windows, total_cost):
         raise NotImplementedError
         
 

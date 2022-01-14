@@ -45,7 +45,7 @@ class EvenBinaryClassificationBatchSampler(Sampler):
         minority_sampler = self.make_sampler(self.minority_indices)
         for idx_pair in zip(majority_sampler, minority_sampler):
             batch.extend(idx_pair)
-            if len(batch) == self.batch_size:
+            if len(batch) >= self.batch_size:
                 random.shuffle(batch)
                 yield batch
                 batch = []

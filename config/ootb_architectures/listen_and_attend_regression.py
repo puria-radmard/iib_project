@@ -4,30 +4,38 @@ from config.ootb_architectures.creation_functions import (
 )
 
 
-def default_blstm_listener_self_attention_regression_architecture(dropout, use_logits):
+def default_blstm_listener_self_attention_regression_architecture(dropout, use_logits, classification=True):
+    if classification:
+        act = 'none' if use_logits else 'softmax'
+    else:
+        act = 'sigmoid'
     return make_blstm_listener_self_attention_regression_architecture(
-        lstm_hidden_size=256,
+        lstm_hidden_size=128,
         pyramid_size=3,
-        key_size=64,
-        value_size=64,
-        query_size=64,
+        key_size=32,
+        value_size=32,
+        query_size=32,
         num_heads=8,
-        decoder_layer_dims=[256, 64, 2],
-        decoder_nonlinearities=['tanh', 'tanh', 'none' if use_logits else 'softmax'],
+        decoder_layer_dims=[2 if classification else 1],
+        decoder_nonlinearities=[act],
         dropout=dropout,
         mfcc_dim=40
     )
 
 
-def default_blstm_listener_transformer_regression_architecture(dropout, use_logits):
+def default_blstm_listener_transformer_regression_architecture(dropout, use_logits, classification=True):
+    if classification:
+        act = 'none' if use_logits else 'softmax'
+    else:
+        act = 'sigmoid'
     return make_blstm_listener_transformer_regression_architecture(
         pyramid_size=3,
-        d_model=512,
+        d_model=256,
         num_heads=8,
         hidden_sizes=[2048],
         num_attn_blocks=2,
-        decoder_layer_dims=[256, 64, 2],
-        decoder_nonlinearities=['tanh', 'tanh', 'none' if use_logits else 'softmax'],
+        decoder_layer_dims=[2 if classification else 1],
+        decoder_nonlinearities=[act],
         dropout=dropout,
         mfcc_dim=40
     )

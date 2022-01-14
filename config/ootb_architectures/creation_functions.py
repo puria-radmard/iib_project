@@ -245,3 +245,24 @@ def make_simple__architecture(
     ).to(device)
 
     return ensemble
+
+
+def make_embedding_loader_fc_network(
+        embedding_cache_path, embedding_dim, layer_dims, nonlinearities, dropout
+    ):
+    
+    encoder_kwargs = {"embedding_cache_path": embedding_cache_path, "embedding_dim": embedding_dim}
+    decoder_kwargs = {
+        "embedding_dim": embedding_dim,
+        "layer_dims": layer_dims,
+        "nonlinearities": nonlinearities,
+        "dropout_rate": dropout,
+        "mean_first": False
+    }
+
+    model = AudioEncoderDecoderEnsemble(
+        'basic', "basic_bidirectional_LSTM", "fc_decoder",
+        1, encoder_kwargs, decoder_kwargs
+    )
+
+    return model

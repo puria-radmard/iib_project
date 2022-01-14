@@ -31,10 +31,7 @@ class pBLSTMLayer(nn.Module):
     def forward(self, x):
         batch, dur, feat = x.shape
         time_reduc = int(dur / 2)
-        try:
-            input_xr = x.contiguous().view(batch, time_reduc, feat * 2)
-        except:
-            import pdb; pdb.set_trace()
+        input_xr = x.contiguous().view(batch, time_reduc, feat * 2)
         output, hidden = self.BLSTM(input_xr)
         return output# , hidden
 

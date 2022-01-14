@@ -43,7 +43,7 @@ num_finetune_epochs=$num_initial_epochs
 save_dir=$6
 
 
-python -m interfaces.cifar_labelled_classification_recalibration \
+python -m interfaces.cifar_labelled_classification_recalibration_with_diversity \
     --dataset                           $dataset    \
     --architecture_name                 $architecture_name  \
     --minibatch_prop                    $minibatch_prop \

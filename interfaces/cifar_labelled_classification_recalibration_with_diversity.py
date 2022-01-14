@@ -1,6 +1,7 @@
 import os, random, argparse, torch
 
-import active_learning as al
+from cifar_repo.cifar import transform_test
+
 from classes_utils.base.data import ClassificationDAFDataloader
 from config.ootb_architectures import convolutional_classification
 
@@ -16,13 +17,13 @@ device = (
 )
 use_cuda = torch.cuda.is_available()
 
-al.disable_tqdm()
+# al.disable_tqdm()
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", required=True, type=str)
 parser.add_argument("--architecture_name", required=True, type=str)
-parser.add_argument("--metric_function", required=False, type=str, choices=['classification'], default='classification')
+parser.add_argument("--metric_function", required=False, type=str, choices=['classification_with_graph_cut'], default='classification_with_graph_cut')
 parser.add_argument("--minibatch_prop", required=True, type=float)
 parser.add_argument("--total_added_prop", required=True, type=float)
 parser.add_argument("--total_start_prop", required=True, type=float)
@@ -44,6 +45,8 @@ parser.add_argument("--save_dir", required=True, default=None)
 parser.add_argument("--ensemble_size", required=False, default=1, type=int)
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M', required=False)
 
+#raise Exception('incorporate acq func names & weightings here and in loop')
+#raise Exception('allow option to keep diversity static')
 
 
 def configure_labelled_classifier_caller(args):
@@ -64,8 +67,18 @@ if __name__ == '__main__':
     if use_cuda:
         torch.cuda.manual_seed_all(manualSeed)
 
+    size_N = 50000
+    size_A = size_N * args.minibatch_prop
+
+    acquisition_kwargs = dict(
+        vertex_location_name='embeddings',
+        span_importance_weight=1 / (0.5 * size_A * (size_A - 1)),
+        vertex_importance_weight=1 / (size_A),
+        seperation_importance_weight=1 / (size_A * (size_N - size_A))
+    )
+
     agent, train_image_dataset, round_cost, total_budget, encodings_criterion, decodings_criterion, anchor_criterion = \
-        set_up_active_learning(args, classification=True)
+        set_up_active_learning(args, classification=True, batch_mode_daf_metric=True, acquisition_kwargs=acquisition_kwargs)
     save_dir = config_savedir(args.save_dir, args)
 
     print('Adding each round: ', round_cost, ' images')
@@ -74,17 +87,12 @@ if __name__ == '__main__':
     model_init_method = configure_labelled_classifier_caller(args)
     dataloader_init_method = lambda ds, batch_size: ClassificationDAFDataloader(ds, collate_fn=None, batch_size=batch_size, num_workers=4)
 
-    # train_image_dataset.indices = list(range(500))
-    # dl = dataloader_init_method(train_image_dataset, 5)
-    # [a for a in dl][0][0].shape
-    # dl2 = DataLoader(train_image_dataset, batch_size=5)
-    # [a for a in dl2][0][0].shape
-
     agent.init(args.total_start_prop)
 
     agent = labelled_classification_recalibration_script(
         agent, args, model_init_method, dataloader_init_method, train_image_dataset, 
-        encodings_criterion, decodings_criterion, anchor_criterion, save_dir, device
+        encodings_criterion, decodings_criterion, anchor_criterion, save_dir, device,
+        make_graphics=False
     )
 
     torch.save(agent.model.state_dict(), os.path.join(save_dir, 'final_autoencoder.mdl'))

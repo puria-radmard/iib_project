@@ -11,6 +11,7 @@ parser.add_argument(
 parser.add_argument('--mirroredPath', type=str, required=True, help='The `normal\' acquisition file you want to mirror wrt acquisition sizes')
 parser.add_argument('--saveDir', type=str, required=True, help='Where to make directories to save indices')
 parser.add_argument('--dataset', type=str, required=True, help='Dataset, just to check everything is right')
+parser.add_argument('--run_path', type=str, required=True, help='Path to script to run queueing with')
 
 args = parser.parse_args()
 saveable_args = vars(args)
@@ -104,7 +105,7 @@ for i, (subset_size, subset_index_path) in enumerate(zip(subset_sizes, subset_in
     log_base = os.path.join(args.saveDir, f"round_{i}_{subset_size}")
     os.mkdir(log_base)
 
-    cmd = "/home/alta/BLTSpeaking/exp-pr450/shell_scripts/daf_active_learning/run_train_cifar_on_subset.sh "
+    cmd = args.run_path + " "
     cmd += os.path.join(log_base, "output_log.txt") + " "
     cmd += str(subset_size) + " "
     cmd += log_base + " "

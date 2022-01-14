@@ -108,14 +108,19 @@ class ReconstructionDisagreementMetric(UnitwiseAcquisition):
 class LabelledRankMetric(UnitwiseAcquisition):
     """
     This is the metric for labelled classification DAFs
-    These DAFs predict lablled examples as 1, and unlabelled ones as 0
+    These DAFs predict labelled examples as 1, and unlabelled ones as 0
+        as one-hot, this is [logit(unlabelled), logit(labelled)]
         => this metric simply selects the lowest scoring ones highest
     """
 
     def __init__(self, dataset):
+        if dataset.is_stochastic:
+            print('WARNING: LabelledRankMetric currently ignores stochastic attributes, just takes the first entry')
         super().__init__(dataset)
     
     def score(self, batch_indices):
-        preds = [self.dataset.last_logits[i] for i in batch_indices]
-        ret_func = lambda x: - x.item()
-        return list(map(ret_func, preds))
+        if self.dataset.is_stochastic:
+            preds = [self.dataset.last_logits[i][0][0] for i in batch_indices]
+        else:
+            preds = [self.dataset.last_logits[i][0] for i in batch_indices]
+        return preds

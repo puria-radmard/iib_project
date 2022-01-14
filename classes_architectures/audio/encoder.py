@@ -147,4 +147,3 @@ class BLSTMListenerTransformerEncoder(StaticAudioEncoderBase):
         layers = nn.ModuleList(layers)
 
         super(BLSTMListenerTransformerEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, d_model)
-

@@ -25,17 +25,18 @@ lr=$2
 dropout=$3
 labelled_list=$4
 unlabelled_list=$5
-save_dir=$6
+test_prop=$6
+save_dir=$7
 
 scheduler_epochs=100000
 scheduler_proportion=1
 weight_decay=0.0005
-batch_size=64
+batch_size=16
 num_epochs=10
 labelled_list=$labelled_list
 unlabelled_list=$unlabelled_list
 max_seq_len=10000 # Let's try this first
-test_prop=0.25
+test_prop=$test_prop
 
 
 

@@ -40,8 +40,11 @@ class Selector:
         else:
             raise ValueError(f'selection_mode "{selection_mode}" not valid')
 
+    def get_batch_unit_scores(self, batch_indices):
+        return self.acquisition.score(batch_indices)
+
     def window_generation(self, batch_indices, dataset):
-        batch_unit_scores = self.acquisition.score(batch_indices)
+        batch_unit_scores = self.get_batch_unit_scores(batch_indices)
         windows = []
         # TODO: TEST WITH SENTENCES AND WRITE ANY PROCESSING NEEDED HERE
         for i, unit_scores in zip(batch_indices, batch_unit_scores):
@@ -310,9 +313,8 @@ class VariableSequenceWindowSelector(Selector):
         return outlist
 
 
-class SubsetSelector:
+class SubsetSelector(Selector):
     def __init__(self, round_cost, acquisition, scorer, window_class=DimensionlessAnnotationUnit):
-        # ADD PARENT
         self.round_cost = round_cost
         self.round_selection = []
         self.all_round_windows = []
@@ -321,38 +323,32 @@ class SubsetSelector:
         self.scorer = scorer
 
     def score_aggregation(self, word_scores):
-        score = torch.sum(word_scores)
-        score /= len(word_scores)
+        score = torch.mean(word_scores)
         return score
 
     def score_extraction(self, unit_scores, i, dataset):
         score = self.score_aggregation(unit_scores)
-        return [{"bounds": (0, len(unit_scores)), "score": score}]
+        return [{"bounds": ..., "score": score}]
 
-    def window_generation(self, batch_indices, dataset):
-        batch_unit_scores = self.acquisition.score(batch_indices)
-        windows = []
-        # TODO: TEST WITH SENTENCES AND WRITE ANY PROCESSING NEEDED HERE
-        for i, unit_scores in zip(batch_indices, batch_unit_scores):
-            window_args = self.score_extraction(unit_scores, i, dataset)
-            windows.extend([
-                self.window_class(i, window["bounds"], window["score"])
-                for window in window_args
-            ])
-            # Do not filter out all labelled/partially labelled windows
-            [w.get_cost(dataset) for w in windows]
-        return windows
+    def get_batch_unit_scores(self, batch_indices):
+        return self.scorer.score(batch_indices)
 
     def assign_agent(self, agent):
         self.agent = agent
 
+    def get_batch_unit_scores(self, batch_indices):
+        return self.scorer.score(batch_indices)
+
     def select_best(self, window_scores):
-        # Filter out all labelled/partially labelled windows!
-        window_scores =(
+        # Filter out all labelled/partially labelled windows
+        window_scores = (
             list(filter(self.agent.train_set.index.new_window_unlabelled, window_scores))
         )
         next_windows = self.acquisition.select_next_subset(window_scores, self.round_cost)
-        return next_windows, len(next_windows)
+        return next_windows, sum([window.cost for window in next_windows])
+
+
+
 
 
 class IndependentSubinstanceSubsetSelector(SubsetSelector):
@@ -362,8 +358,9 @@ class IndependentSubinstanceSubsetSelector(SubsetSelector):
         super().__init__(round_cost, acquisition, scorer,  window_class)
     
     def window_generation(self, batch_indices, dataset):
+        raise Exception('needs heavy fixing to incorporate')
         windows = []
-        for i in batch_indices:
+        for i, unit_scores in zip(batch_indices, batch_unit_scores):
             windows.extend([self.window_class(i, [j, j+1], 0) for j in range(len(dataset.cost[i]))])
         [w.get_cost(dataset) for w in windows]
         return windows

@@ -21,7 +21,8 @@ encoder_types.update({
     "no_skip": NoSkipEncoder,
     "pytorch-classification": make_model,
     "blstm_listener_self_attention": BLSTMListenerSelfAttentionEncoder,
-    "blstm_listener_transformer": BLSTMListenerTransformerEncoder
+    "blstm_listener_transformer": BLSTMListenerTransformerEncoder,
+    "simple_loader": EmbeddingLoaderEncoder
 })
 
 moving_decoder_types = {

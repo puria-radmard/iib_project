@@ -327,8 +327,6 @@ if __name__ == '__main__':
         if round_num > 0:
             make_metric_dictionary(agent.selector.all_round_windows, round_num, previously_trained_indices, set(new_indices), save_dir)
 
-            import pdb; pdb.set_trace()
-
         previously_trained_indices, new_indices = update_indices(previously_trained_indices, agent)
         
         ## Sanity check on this

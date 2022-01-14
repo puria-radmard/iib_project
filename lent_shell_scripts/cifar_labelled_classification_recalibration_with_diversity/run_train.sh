@@ -4,9 +4,9 @@ set ALLARGS = ($*)
 
 touch $1
 set LOG=$1
-set TRAIN='/home/alta/BLTSpeaking/exp-pr450/lent_shell_scripts/listen_and_attend_classification/train.sh'
+set TRAIN='/home/alta/BLTSpeaking/exp-pr450/lent_shell_scripts/cifar_labelled_classification_recalibration_with_diversity/train.sh'
 
-set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass='*' -l osrel='*' -l hostname='\\!air209.eng.cam.ac.uk' $TRAIN $2 $3 $4 $5 $6 $7 $8`
+set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass='*' -l osrel='*' -l hostname='\\!air209.eng.cam.ac.uk' $TRAIN $2 $3 $4 $5 $6 $7`
 
 #set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass=kepler -l osrel='*' -l hostname='*' $TRAIN`
 #set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass=pascal -l osrel='*' -l hostname='*' $TRAIN`

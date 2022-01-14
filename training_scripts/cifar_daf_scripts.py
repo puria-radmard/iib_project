@@ -123,9 +123,6 @@ def train_daf_labelled_classification(
 
         for inputs, targets in train_dataloader:
             
-            print("check everything is working here - i.e. we have labelled and unlabelled data to train")
-            import pdb; pdb.set_trace()
-
             if inputs.shape[0] == 1:
                 # Batch norm
                 continue
@@ -133,6 +130,7 @@ def train_daf_labelled_classification(
             optimizer.zero_grad()
 
             inputs = inputs.to(device)
+            targets = targets.to(device)
 
             encodings, decodings = classifier(inputs)
 
@@ -154,6 +152,7 @@ def train_daf_labelled_classification(
         for inputs, targets in test_dataloader:
 
             inputs = inputs.to(device)
+            targets = targets.to(device)
             
             encodings, decodings = classifier(inputs)
 

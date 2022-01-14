@@ -17,7 +17,8 @@ DEFAULT_NOSKIP_ENCODER_STRIDES=[2,2]
 
 __all__ = [
     'UNetEncoder',
-    'NoSkipEncoder'
+    'NoSkipEncoder',
+    'EmbeddingLoaderEncoder'
 ]
 
 
@@ -131,6 +132,25 @@ class NoSkipEncoder(ImageEncoderBase):
             input_size, layers, dropout_idxs=[], noise_idx=noise_idx, variational=variational, 
             embedding_dim=embedding_dim, return_skips=False
         )
+
+
+class EmbeddingLoaderEncoder(ImageEncoderBase):
+    def __init__(self, embedding_cache_path, embedding_dim, *args, **kwargs):
+        super(EmbeddingLoaderEncoder, self).__init__(
+            self, input_size=None, layers=[self.forward()], dropout_idxs=[], 
+            noise_idx=None, variational=False, embedding_dim=embedding_dim, return_skips=False
+        )
+        self.embedding_cache_path = embedding_cache_path
+
+    def load_embeddings(self):
+        return torch.load(self.embedding_cache_path)
+
+    def get_embeddings(self, indices):
+        embeddings = self.load_embeddings()
+        return embeddings[indices]
+
+    def forward(self, x, *args, **kwargs):
+        return self.get_embeddings(x)
 
 
 if __name__ == '__main__':

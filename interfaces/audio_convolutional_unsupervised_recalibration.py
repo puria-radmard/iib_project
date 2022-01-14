@@ -196,8 +196,8 @@ if __name__ == '__main__':
     agent.budget = total_budget
 
     model_init_method = default_audio_unet_network if args.unet_skips else default_noskip_audio_unet_network
-    dataloader_init_method = lambda ds, bs: DataLoader(
-        ds, collate_fn=coll_fn_utt_with_channel_insersion, batch_size=bs, shuffle=True
+    dataloader_init_method = lambda ds, batch_size: DataLoader(
+        ds, collate_fn=coll_fn_utt_with_channel_insersion, batch_size=batch_size, shuffle=True
     )
 
     agent = unsupervised_recalibration_script(

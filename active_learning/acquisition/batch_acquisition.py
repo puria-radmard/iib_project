@@ -1,4 +1,5 @@
 from .utils import *
+import random
 from ..batch_querying import SequentialKMeansBatchQuerying
 
 
@@ -244,3 +245,192 @@ class KMeansCentroidBatchAcquisition(BatchAcquisition):
         )
         chosen_indices = mechanism.init_round(candidate_windows, self.dataset)
         return [DimensionlessAnnotationUnit(i, ..., None) for i in chosen_indices]
+
+
+class GraphCutWeightedCoreSetBatchAcquisition(BatchAcquisition):
+
+    """
+        A batch selection for diversity, in combination with some other score
+        Objective function = w_1 * A + w_2 * B + w_3 * C
+
+        where:
+
+            w_1 = seperation_importance_weight
+            w_2 = span_importance_weight
+            w_3 = vertex_importance_weight
+
+            A = negative sum of pairwise distances between embeddings inside and outisde the acquisition set
+            B = sum of all pairwise distances between embeddings in the acquisition set (the span)
+            C = sum of some acquisition metric evaluted on each of the embeddings
+    """
+
+    def __init__(self, dataset, vertex_location_name, span_importance_weight, vertex_importance_weight, seperation_importance_weight):
+        super(GraphCutWeightedCoreSetBatchAcquisition, self).__init__(dataset)
+
+        print('WARNING: This ignores dataset stochasticity and only looks at first draw/sample')
+
+        # The vertex locations, namely the embedding coordintes
+        self.vertex_location_name = vertex_location_name
+
+        # Acquisition function composition weights
+        self.span_importance_weight = span_importance_weight
+        self.vertex_importance_weight = vertex_importance_weight
+        self.seperation_importance_weight = seperation_importance_weight
+
+        self.window_cache = []
+
+    def get_window_location(self, window):
+        # Get the embedding coords for a window
+        loc = self.dataset.__getattr__(self.vertex_location_name).get_attr_by_window(window)
+        return loc[0] if self.dataset.is_stochastic else loc
+
+    def get_vertex_weight(self, window):
+        # i.e. Get the classification logits for a window
+        return window.score
+
+    def stack_all_vertex_locations(self, windows):
+        # Stack a number of windows
+        vectors = [self.get_window_location(w) for w in windows]
+        return torch.stack(vectors).unsqueeze(0).to(float)
+
+    def stack_all_vertex_weights(self, windows):
+        weights = [self.get_vertex_weight(w) for w in windows]
+        return torch.stack(weights)
+
+    def greedy_step(self, edge_weights, vertex_weights, inside_acquisition_set, outside_acquisition_set):
+        # Greedy step by selecting best gain
+
+        # Say len(inside_acquisition_set) = I
+        # Say len(outside_acquisition_set) = O
+        # edge_weights.shape = [N x N]
+        # vertex_weights.shape = [N]
+
+        # Slicing creates a view of the underlying tensor -> shouldn't cause additional memory usage
+        candidate_vertex_weights = vertex_weights[outside_acquisition_set]  # [O]
+        candidate_edge_weights = edge_weights[outside_acquisition_set]      # [O, N]
+
+        # - Calculate span term -
+        # How far each node in the current acquisition set would be from this node
+        extra_inner_edge_weights = candidate_edge_weights[:,inside_acquisition_set] # [O, I]
+        sum_extra_inner_edge_weights = extra_inner_edge_weights.sum(-1)             # [O]
+        gains = self.span_importance_weight * sum_extra_inner_edge_weights
+
+        # - Calculate seperation term -
+        # How close would this node be to other remaining candidates?
+        extra_outflow_edge_weights = candidate_edge_weights[:,outside_acquisition_set]  # [O, O]
+        sum_extra_outflow_edge_weights = extra_outflow_edge_weights.sum(-1)             # [O]
+        gains -= self.seperation_importance_weight * sum_extra_outflow_edge_weights
+        # However by including each vertex, you would also be removing a bunch of seperation weights
+        # These are the same as the span weight calculated above
+        gains += self.seperation_importance_weight * sum_extra_inner_edge_weights
+
+        # -Add the vertex weights-
+        gains += self.vertex_importance_weight * candidate_vertex_weights
+
+        # Convert gains back to the original indices
+        best_gains_candidate = gains.argmax()
+        gains_candidate_index = outside_acquisition_set[best_gains_candidate]
+
+        return gains_candidate_index
+
+    def add_window_cache_locations(self, vertex_locations):
+        if len(self.window_cache) > 0:
+            window_cache_locations = self.stack_all_vertex_locations(self.window_cache)
+            return torch.cat((vertex_locations, window_cache_locations), 0)
+        else:
+            return vertex_locations
+
+    def select_next_subset(self, candidate_windows, total_cost):
+        # Get all weights for vertices
+        vertex_weights = self.stack_all_vertex_weights(candidate_windows)
+
+        # Get all the windows' embedding locations
+        candidate_vertex_loctions = self.stack_all_vertex_locations(candidate_windows)
+
+        # Get also all previous windows' embeddings locations
+        candidate_vertex_loctions = self.add_window_cache_locations(candidate_vertex_loctions)
+
+        # This is quite big - pairwise distances between the candidate vertices
+        # cdist gives size [1, N, N], so we have to take first index
+        edge_weights = torch.cdist(candidate_vertex_loctions, candidate_vertex_loctions)[0]
+        
+        # Deal with indices which refer to windows
+        outside_acquisition_set = list(range(len(candidate_windows)))
+        inside_acquisition_set = list(range(len(candidate_windows), len(candidate_vertex_loctions)))
+        new_acquisition_set = []
+
+        # Select seed point based on vertex weights and take it from budget
+        initialisation_index = vertex_weights.argmax()
+        inside_acquisition_set.append(initialisation_index)
+        outside_acquisition_set.remove(initialisation_index)
+        total_cost -= candidate_windows[initialisation_index].cost
+
+        # Iterate, taking the next greedy selection each time
+        while total_cost > 0:
+            greedy_window_index = self.greedy_step(edge_weights, vertex_weights, inside_acquisition_set, outside_acquisition_set)
+            inside_acquisition_set.append(greedy_window_index)
+            new_acquisition_set.append(greedy_window_index)
+            outside_acquisition_set.remove(greedy_window_index)
+            total_cost -= candidate_windows[greedy_window_index].cost
+
+        # Get windows by indices and return, also caching them for later
+        selected_windows = [candidate_windows[i] for i in new_acquisition_set]
+        self.window_cache.extend(selected_windows)
+        return selected_windows
+
+
+if __name__ == '__main__':
+
+    from ..dataset_classes import DimensionlessDataset, ALAttribute
+    from ..annotation_classes import DimensionlessIndex
+    import matplotlib.pyplot as plt
+
+    torch.manual_seed(42)
+
+    N = 2000
+    d = 2
+    num_clusters = 100
+    points_per_cluster = int(N/num_clusters)
+    
+    cluster_rs = 20*torch.rand(num_clusters)
+    cluster_thetas = 2*np.pi*torch.rand(num_clusters)
+    complex_cluster_centers = torch.polar(cluster_rs, cluster_thetas)
+    cluster_centers = torch.dstack([complex_cluster_centers.real, complex_cluster_centers.imag])[0]
+
+    embeddings = torch.vstack([torch.randn(points_per_cluster, d) + cc for cc in cluster_centers])
+
+    embedding_scores = ((torch.arange(N)%points_per_cluster)==0).to(int)
+    costs = torch.ones(N)
+    data_pointers = torch.arange(N)
+
+    dataset = DimensionlessDataset(
+        data=data_pointers, labels=data_pointers, costs=costs, index_class=DimensionlessIndex,
+        semi_supervision_agent=None, data_reading_method=None, label_reading_method=None, is_stochastic=False,
+        al_attributes=[ALAttribute(name="vertex_locations", initialisation=embeddings)],
+    )
+    
+    windows = [DimensionlessAnnotationUnit(i, ..., embedding_scores[i]) for i in range(N)]
+    for w in windows: w.cost = 1
+
+    seperation_importance_weight = 1/(num_clusters*(N-num_clusters))
+    span_importance_weight = 1/(0.5*num_clusters*(num_clusters-1))
+    vertex_importance_weight = 1/num_clusters
+    
+    acquisition = GraphCutWeightedCoreSetBatchAcquisition(
+        dataset=dataset,
+        vertex_location_name='vertex_locations', 
+        seperation_importance_weight=seperation_importance_weight,
+        span_importance_weight=span_importance_weight,
+        vertex_importance_weight=vertex_importance_weight
+    )
+
+    subset = acquisition.select_next_subset(windows, num_clusters)
+    print(sorted([s.i//points_per_cluster for s in subset]))
+    print(acquisition.seperation_importance_weight)
+    print(acquisition.span_importance_weight)
+    print(acquisition.vertex_importance_weight)
+    print(embedding_scores[[s.i for s in subset]])
+
+    plt.scatter(embeddings[:,0], embeddings[:,1], c = [i//points_per_cluster for i in range(N)])
+    plt.scatter(embeddings[[s.i for s in subset],0], embeddings[[s.i for s in subset],1], c = 'r')
+    plt.savefig('asdf.png')

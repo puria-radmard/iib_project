@@ -18,7 +18,6 @@ def update_indices(previously_trained_indices, agent):
     return previously_trained_indices, new_indices
 
 
-
 def make_metric_dictionary(all_round_windows, round_num, labelled_indices, newly_added_indices, save_dir):
     
     # Initialise the distributions
@@ -50,7 +49,6 @@ def make_metric_dictionary(all_round_windows, round_num, labelled_indices, newly
             {'seen': labelled_distribution, 'unseen': unlabelled_distribution},
             h, pickle.HIGHEST_PROTOCOL
         )
-
 
 
 def unsupervised_recalibration_script(
@@ -153,7 +151,7 @@ def unsupervised_recalibration_script(
 def labelled_classification_recalibration_script(
         agent, args, model_init_method, dataloader_init_method,
         train_dataset, encodings_criterion, decodings_criterion, 
-        anchor_criterion, save_dir, device
+        anchor_criterion, save_dir, device, make_graphics = True
     ):
 
     print('WARNING: Please check that agent is initialised before labelled_classification_recalibration_script is called!')
@@ -166,7 +164,7 @@ def labelled_classification_recalibration_script(
     for _ in agent:
 
         # Lag in when the metric values are actually updated!
-        if round_num > 0:
+        if round_num > 0 and make_graphics:
             make_metric_dictionary(agent.selector.all_round_windows, round_num, previously_trained_indices, set(new_indices), save_dir)
 
         previously_trained_indices, new_indices = update_indices(previously_trained_indices, agent)
@@ -206,7 +204,7 @@ def labelled_classification_recalibration_script(
             initial_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.initial_lr, \
                 momentum=args.momentum, weight_decay=args.weight_decay)
             agent.model, results = train_daf_labelled_classification(
-                ensemble=agent.model,
+                classifier=agent.model,
                 optimizer=initial_optimizer,
                 scheduler=None,
                 scheduler_epochs=[],
@@ -222,7 +220,7 @@ def labelled_classification_recalibration_script(
             finetune_optimizer = torch.optim.SGD(agent.model.parameters(), lr=args.finetune_lr, \
                 momentum=args.momentum, weight_decay=args.finetune_weight_decay)
             agent.model, results = train_daf_labelled_classification(
-                ensemble=agent.model,
+                classifier=agent.model,
                 optimizer=finetune_optimizer,
                 scheduler=None,
                 scheduler_epochs=[],

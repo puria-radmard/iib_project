@@ -6,21 +6,12 @@ from sklearn.model_selection import train_test_split
 
 __all__ = [
     "chunks",
-    "data_range_normalisation",
-    "data_demeaning",
     "coll_fn_utt_with_channel_insersion",
     "data_dict_length_split",
-    "include_utterance",
-    "features_from_time_bounds",
-    "filter_alignment_df",
     "add_certainties_to_data_dict",
-    "generate_data_features",
-    "generate_word_indices",
-    "generate_data_dict_words",
     "generate_data_dict_utt",
     "split_data_dict_by_labelled",
     "coll_fn_utt",
-    "generate_coll_fn_simclr_utt",
     'train_test_split_data_dict',
     'combine_data_dicts'
 ]
@@ -86,8 +77,11 @@ def generate_data_dict_utt(features_paths, text_path=None):
 
 def split_data_dict_by_labelled(data_dict, labelled_utt_list_path, unlabelled_utt_list_path):
 
-    with open(labelled_utt_list_path, "r") as f:
-        labelled_utt_ids = set(f.read().split("\n")[:-1])
+    if labelled_utt_list_path is not None:
+        with open(labelled_utt_list_path, "r") as f:
+            labelled_utt_ids = set(f.read().split("\n")[:-1])
+    else:
+        labelled_utt_ids = set()
 
     with open(unlabelled_utt_list_path, "r") as f:
         unlabelled_utt_ids = set(f.read().split("\n")[:-1])
@@ -113,12 +107,10 @@ def split_data_dict_by_labelled(data_dict, labelled_utt_list_path, unlabelled_ut
             for k in data_dict.keys():
                 unlabelled_data_dict[k].append(data_dict[k][i])
 
-    assert (
-        seen_labelled_utt_ids == labelled_utt_ids
-    ), "Not all labelled utt ids seen in selected data"
-    assert (
-        seen_unlabelled_utt_ids == unlabelled_utt_ids
-    ), "Not all unlabelled utt ids seen in selected data"
+    assert (seen_labelled_utt_ids <= labelled_utt_ids)
+    print(len(labelled_utt_ids) - len(seen_labelled_utt_ids), "labelled utt ids not seen in selected data")
+    assert (seen_unlabelled_utt_ids <= unlabelled_utt_ids)
+    print(len(unlabelled_utt_ids) - len(seen_unlabelled_utt_ids), "unlabelled utt ids not seen in selected data")
 
     return labelled_data_dict, unlabelled_data_dict
 

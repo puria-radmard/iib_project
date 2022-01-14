@@ -22,7 +22,6 @@ parser.add_argument('--initProp', type=float, help='proportion of dataset to sta
 parser.add_argument('--roundProp', type=float, help='proportion of dataset to add each round')
 parser.add_argument('--totalBudgetProp', type=float, help='proportion of dataset to stop at')
 parser.add_argument('--acquisitionFunction', type=str, help='acquisition function to use')
-parser.add_argument('--roundEpochs', type=int, help='Number of epochs to train after each acquisition')
 parser.add_argument('--saveDir', type=str, help='Where to make directories to save performances & indices')
 
 def make_ensemble(args, ensemble_size, num_classes):
@@ -68,9 +67,6 @@ if __name__ == '__main__':
     torch.manual_seed(args.manualSeed)
     if use_cuda:
         torch.cuda.manual_seed_all(args.manualSeed)
-
-
-
 
     if args.dataset == 'cifar10':
         train_dataset, test_dataset, num_classes = CIFAR10Subset, CIFAR10, 10
@@ -208,11 +204,11 @@ if __name__ == '__main__':
         print(f'\n\nRound: {round_num} | {len(train_image_dataset)} labelled')
 
         # Train and val
-        for epoch in range(args.roundEpochs):
+        for epoch in range(args.epochs):
 
             adjust_learning_rate(optimizer, epoch, args, state)
 
-            print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.roundEpochs, state['lr']))
+            print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
             # Need to return logits drectly while in training/val script
             classification_model.midloop = True

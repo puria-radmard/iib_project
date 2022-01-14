@@ -51,13 +51,14 @@ class CIFARLabelledClassificationBase(CIFARLabelledUtilityBase):
         return len(self.data)
 
     def __getitem__(self, index: int):
-        return self.data[index], int(index in self.indices)
+        _data = super().__getitem__(index)
+        return _data[0], int(index in self.indices)
 
     def get_original_data(self, index):
-        return self.data[index]
+        return super().__getitem__(index)[0]
         
     def get_original_label(self, index):
-        return self.targets[index]
+        return super().__getitem__(index)[1]
 
 
 

@@ -4,7 +4,7 @@ set ALLARGS = ($*)
 
 touch $1
 set LOG=$1
-set TRAIN='/home/alta/BLTSpeaking/exp-pr450/shell_scripts/cifar_daf_recalibration/train_daf_recalibration.sh'
+set TRAIN='/home/alta/BLTSpeaking/exp-pr450/lent_shell_scripts/cifar_unsupervised_daf_recalibration/train.sh'
 
 set CMD = `qsub -cwd -j yes -o $LOG -P esol -l qp=cuda-low -l gpuclass='*' -l osrel='*' -l hostname='\\!air209.eng.cam.ac.uk' $TRAIN $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12}`
 

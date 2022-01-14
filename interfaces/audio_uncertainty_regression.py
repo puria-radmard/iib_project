@@ -3,6 +3,7 @@ from torch import nn
 import numpy as np
 from classes_utils.audio.data import AudioUtteranceDataset
 from config.ootb_architectures import long_recurrent_regression_network, short_recurrent_regression_network
+from config.ootb_architectures.listen_and_attend_regression import default_blstm_listener_self_attention_regression_architecture, default_blstm_listener_transformer_regression_architecture
 from training_scripts.audio_regression_scripts import audio_regression_script
 from util_functions.data import *
 from config import device
@@ -16,7 +17,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     parser.add_argument("--architecture_name", required=True, type=str)
-    parser.add_argument("--cell_type", required=True, type=str)
+    parser.add_argument("--cell_type", required=False, type=str, default='gru')
     # parser.add_argument("--encoder_lstm_sizes", required=True, type=int, nargs='+')
     # parser.add_argument("--encoder_lstm_layers", required=True, type=int, nargs='+')
     # parser.add_argument("--decoder_fc_hidden_dims", required=True, type=int, nargs='+')
@@ -43,7 +44,11 @@ if __name__ == '__main__':
     if args.architecture_name == "short_recurrent_regression_network":
         model = short_recurrent_regression_network(args.cell_type, args.dropout, device)
     elif args.architecture_name == "long_recurrent_regression_network":
-        model = long_recurrent_regression_network(args.cell_type, args.dropout, device)    
+        model = long_recurrent_regression_network(args.cell_type, args.dropout, device)  
+    elif args.architecture_name == "default_blstm_listener_self_attention_regression_architecture":
+        model = default_blstm_listener_self_attention_regression_architecture(args.dropout, use_logits = False, classification=False).to(device)
+    elif args.architecture_name == "default_blstm_listener_transformer_regression_architecture":
+        model = default_blstm_listener_transformer_regression_architecture(args.dropout, use_logits = False, classification=False).to(device)
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=1, gamma=args.scheduler_proportion)
@@ -56,16 +61,23 @@ if __name__ == '__main__':
 
     data_dict = generate_data_dict_utt(args.features_paths, text_path=None)
     data_dict = add_certainties_to_data_dict(data_dict, args.alignment_paths)
-    
     print(f'limiting mfcc sequence length to {args.max_seq_len}')
     data_dict = data_dict_length_split(data_dict, args.max_seq_len)
 
     master_dataset = AudioUtteranceDataset(
-        data_dict["mfcc"], data_dict["utterance_segment_ids"], data_dict["text"],
-        "config/per_speaker_mean.pkl",
-        "config/per_speaker_std.pkl",
+        data_dict["mfcc"], data_dict["utterance_segment_ids"],
+        "config/per_speaker_mean.pkl", "config/per_speaker_std.pkl",
         confidence = data_dict["certainties"]
     )
+
+    # from tqdm import tqdm
+    # for i in tqdm(range(len(master_dataset))):
+    #     try:
+    #         _ = master_dataset[i]
+    #     except:
+    #         print(master_dataset.utt_ids[i])
+
+
     test_length = int(np.floor(args.test_prop*len(master_dataset)))
     train_length = len(master_dataset) - test_length
     datasettrn, datasettst = torch.utils.data.random_split(master_dataset, [train_length, test_length])

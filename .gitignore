@@ -1,14 +1,17 @@
 **/__pycache__
 **/.ipynb_checkpoints
+**.pyc
+*.ipynb
 
 cifar_repo
 audio_autoencoder
 
-*.ipynb
 old*
 *logs
 data/*
+models/*
 archive/old_logs
 logs
 
-**.pyc
+!technical_milestone_dashboard.ipynb
+!lent_shell_scripts/cifar_labelled_classification_recalibration_with_diversity/byol_caching.ipynb

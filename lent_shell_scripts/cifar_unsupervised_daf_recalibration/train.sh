@@ -29,20 +29,25 @@ finetune_weight_decay=0.0005
 batch_size=128
 ensemble_size=1
 
+reinit_option=do_reinitialise_autoencoder_ensemble
+total_start_prop=0.05
+
+# !!
+unet_skip_option=compressed_net
+# !!
+
+
 metric_function=$1
 minibatch_prop=$2
-total_start_prop=$3
-initial_lr=$4
-finetune_lr=$5
-unet_skip_option=$6
-num_initial_epochs=$7
-num_finetune_epochs=$8
-reinit_option=$9
-save_dir=${10}
-dataset=${11}
+initial_lr=$3
+finetune_lr=$initial_lr
+num_initial_epochs=$4
+num_finetune_epochs=$num_initial_epochs
+save_dir=$5
+dataset=$6
 
 
-python -m training_scripts.cifar_unsupervised_recalibration \
+python -m interfaces.cifar_unsupervised_recalibration \
     --dataset $dataset \
     --metric_function $metric_function \
     --minibatch_prop $minibatch_prop \

@@ -214,7 +214,7 @@ class DimensionlessAnnotationUnit(AnnotationUnit):
     def __init__(self, data_index, bounds, score):
         super(DimensionlessAnnotationUnit, self).__init__(data_index, bounds, score)
         self.size = 1
-        self.slice = ... # slice(None)
+        self.slice = ...
 
     def savable(self):
         return [int(self.i), None, float(self.score)]

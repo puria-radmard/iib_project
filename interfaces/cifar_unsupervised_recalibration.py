@@ -6,15 +6,15 @@ from cifar_repo.cifar import transform_test
 
 import active_learning as al
 
-from classes_losses.reconstrution import ImageReconstructionLoss
 from classes_utils.cifar.data import CIFAR100LabelledClassification, CIFAR100Subset, CIFAR10LabelledClassification, CIFAR10Subset
 from config.ootb_architectures import default_staircase_network, default_unet_network, no_skip_default_unet_network
 from training_scripts.recalibration_scripts import unsupervised_recalibration_script
-from util_functions.data import *
-from config import metric_functions
-from torch.utils.data import DataLoader
-from util_functions.base import config_savedir
 from classes_utils.base.model import ModelWrapper
+from classes_losses.reconstrution import ImageReconstructionLoss
+from util_functions.base import config_savedir
+from torch.utils.data import DataLoader
+from config import metric_functions
+from util_functions.data import *
 
 
 device = (
@@ -66,18 +66,21 @@ def configure_autoencoder_caller(args):
         autoencoder_ensemble_caller = default_unet_network if args.unet_skips else no_skip_default_unet_network
 
     else:
-        print('Using compressed fully convolutional net')
+        print('Using compressed (staircase) fully convolutional net')
         autoencoder_ensemble_caller = default_staircase_network
 
     return autoencoder_ensemble_caller
 
 
-def set_up_active_learning(args, classification):
+def set_up_active_learning(args, classification, batch_mode_daf_metric=False, acquisition_kwargs=None):
 
     # This is for the basic daf case - needs to be parameterised
     encodings_criterion = None
-    decodings_criterion = ImageReconstructionLoss(mean_decodings=False, mean_losses=True)
     anchor_criterion = None
+    if classification:
+        decodings_criterion = nn.CrossEntropyLoss(reduction='mean')
+    else:
+        decodings_criterion = ImageReconstructionLoss(mean_decodings=False, mean_losses=True)
 
     # Select dataset
     if args.dataset == 'cifar10':
@@ -94,6 +97,14 @@ def set_up_active_learning(args, classification):
         original_transform=transform, init_indices=[], target_transform=None
     )
 
+    attr_init = [[None for _ in range(args.ensemble_size)] for _ in range(len(train_image_dataset.data))]
+    al_attributes = [
+        # Normal initialisation doesn't work because labels size != reconstruction size, so
+        # we need to manually input reconstruction shape
+        al.dataset_classes.StochasticAttribute('last_logits', attr_init.copy(), args.ensemble_size, cache=False),
+        al.dataset_classes.StochasticAttribute('embeddings', attr_init.copy(), args.ensemble_size, cache=False),
+    ]
+    
     # Standard active learning definitions
     train_dataset = al.dataset_classes.DimensionlessDataset(
         data=torch.tensor(range(len(train_image_dataset.data))),
@@ -103,18 +114,7 @@ def set_up_active_learning(args, classification):
         semi_supervision_agent=None,
         data_reading_method=lambda x: train_image_dataset.get_original_data(x),
         label_reading_method=lambda x: train_image_dataset.get_original_data(x),
-        al_attributes=[
-            # Normal initialisation doesn't work because labels size != reconstruction size, so
-            # we need to manually input reconstruction shape
-            al.dataset_classes.StochasticAttribute(
-                'last_logits', [[None for _ in range(args.ensemble_size)] for _ in range(len(train_image_dataset.data))], 
-                args.ensemble_size, cache=False
-            ),
-            al.dataset_classes.StochasticAttribute(
-                'embeddings', [[None for _ in range(args.ensemble_size)] for _ in range(len(train_image_dataset.data))], 
-                args.ensemble_size, cache=False
-            ),
-        ],
+        al_attributes=al_attributes,
         # We are using an ensemble in principle
         is_stochastic=True
     )
@@ -122,20 +122,30 @@ def set_up_active_learning(args, classification):
     round_cost = train_dataset.total_cost * args.minibatch_prop
     total_budget = train_dataset.total_cost * args.total_added_prop
 
-    metric_function = metric_functions[args.metric_function](train_dataset)
-
     div_pol = al.batch_querying.NoPolicyBatchQuerying()
     window_class = al.annotation_classes.DimensionlessAnnotationUnit
-    selector = al.selector.DimensionlessSelector(
-        round_cost=round_cost, 
-        acquisition=metric_function,
-        window_class=window_class,
-        diversity_policy=div_pol,
-        selection_mode='argmax'
-    )
 
     # Need this for compatability
     model = ModelWrapper(None)
+
+    if batch_mode_daf_metric:
+        metric_function = metric_functions[args.metric_function](train_dataset, **acquisition_kwargs)
+        scorer = metric_functions['classification'](train_dataset)
+        selector = al.selector.SubsetSelector(
+            round_cost=round_cost, 
+            acquisition=metric_function,
+            scorer = scorer,
+            window_class=window_class,
+        )
+    else:
+        metric_function = metric_functions[args.metric_function](train_dataset)
+        selector = al.selector.DimensionlessSelector(
+            round_cost=round_cost, 
+            acquisition=metric_function,
+            window_class=window_class,
+            diversity_policy=div_pol,
+            selection_mode='argmax'
+        )
 
     agent = al.agent.ActiveLearningAgent(
         train_set=train_dataset,
@@ -171,7 +181,7 @@ if __name__ == '__main__':
     print('Will stop at: ', total_budget, ' images')
 
     model_init_method = configure_autoencoder_caller(args)
-    dataloader_init_method = lambda ds, bs: DataLoader(ds, batch_size=bs, shuffle=True, num_workers=4)
+    dataloader_init_method = lambda ds, batch_size: DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=4)
 
     agent.init(args.total_start_prop)
 
