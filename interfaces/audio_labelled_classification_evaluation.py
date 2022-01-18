@@ -76,6 +76,6 @@ if __name__ == '__main__':
         'all_utt_ids': all_utt_ids,
         'all_certainties': all_certainties,
     }
-    torch.save_dict(save_dict, save_path)
+    torch.save(save_dict, save_path)
     print('Saved in', save_path)
     

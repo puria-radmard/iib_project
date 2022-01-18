@@ -5,6 +5,7 @@ DAFpathbase="/home/alta/BLTSpeaking/exp-pr450/lent_logs/cifar100_labelled_classi
 mirroredPath="/home/alta/BLTSpeaking/exp-pr450/lent_logs/cifar100_densenet_al_baseline/round_history-1"
 saveDir="/home/alta/BLTSpeaking/exp-pr450/lent_logs/cifar100_labelled_classification_daf_active_learning/round_history"
 
+$queuer_path $dataset "${DAFpathbase}-0" $mirroredPath $saveDir
 $queuer_path $dataset "${DAFpathbase}-1" $mirroredPath $saveDir
 $queuer_path $dataset "${DAFpathbase}-2" $mirroredPath $saveDir
 $queuer_path $dataset "${DAFpathbase}-3" $mirroredPath $saveDir

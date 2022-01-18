@@ -24,11 +24,12 @@ roundProp=$2
 totalBudgetProp=$3
 acquisitionFunction=$4
 saveDir=$5
-dataset=$6
+epochs=$6
+dataset=$7
 
 
 python -m training_scripts.cifar_active_learning \
-    -a densenet --depth 100 --growthRate 12 --train-batch 64 --epochs 300 --schedule 150 225 --wd 1e-4 --gamma 0.1 \
+    -a densenet --depth 100 --growthRate 12 --train-batch 64 --epochs $epochs --schedule 150 225 --wd 1e-4 --gamma 0.1 \
     --checkpoint /home/alta/BLTSpeaking/exp-pr450/logs/preresnet_al_baseline/checkpoint \
     --dataset $dataset \
     --initProp $initProp \

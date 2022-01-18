@@ -1,31 +1,20 @@
-import os, json, argparse, torch, pickle
+import os, argparse, torch
 import numpy as np
-from re import S
-import random
-from torch import nn
 
-from cifar_repo.utils.logger import Logger
-from cifar_repo.cifar import transform_test
+import random
 
 import active_learning as al
 from config.ootb_architectures import default_audio_unet_network, default_noskip_audio_unet_network
-
-from training_scripts.audio_training_scripts import train_autoencoder_ensemble
 from classes_losses.reconstrution import ReconstructionLoss
 from classes_utils.audio.data import SubsetAudioUtteranceDataset
-from classes_utils.architecture import SkipEncoderDecoderEnsemble
-from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_STRIDES, DEFAULT_UNET_ENCODER_OUT_CHANNELS
-from classes_architectures.cifar.decoder import DEFAULT_UNET_DECODER_OUT_CHANNELS, DEFAULT_UNET_DECODER_KERNEL_SIZES, DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS
 from training_scripts.recalibration_scripts import unsupervised_recalibration_script
 from util_functions.data import *
 from config import metric_functions
 from torch.utils.data import DataLoader
 from interfaces.cifar_unsupervised_recalibration import ModelWrapper, config_savedir
-
-import matplotlib.pyplot as plt
+from util_functions.data import coll_fn_utt_with_channel_insersion
 import seaborn as sns
 
-from util_functions.data import coll_fn_utt_with_channel_insersion
 sns.set_style('darkgrid')
 
 

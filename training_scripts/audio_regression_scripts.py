@@ -53,6 +53,8 @@ def audio_regression_script(
             epoch_train_loss += regression_loss.item()
             batch_count += 1
 
+            torch.cuda.empty_cache()
+
         epoch_test_loss, test_batch_count = 0, 0
         ensemble.eval()
 
