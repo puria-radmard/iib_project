@@ -1,7 +1,7 @@
+from imp import acquire_lock
 import pandas as pd
 import os, json
 from glob import glob
-import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import seaborn as sns
@@ -14,23 +14,29 @@ def get_json(path):
     return jfile
 
 
-def get_plot_point_baseline(log_base, round_num, ):
+def get_plot_point_baseline(log_base, round_num, key, epoch_limit=None):
+
     round_base = os.path.join(log_base, f'round_{round_num}')
+
     try:
+
+        labelled_set_path = os.path.join(round_base, 'labelled_set.txt')
+        with open(labelled_set_path, 'r') as f:
+            lines = f.read().split('\n')[:-1]
+        res_image = len(lines)
+
         valid_acc = pd.read_csv(os.path.join(round_base, 'log.txt'), sep='\t')['Valid Acc.']
+        if len(valid_acc) < 300: print(key, res_image, len(valid_acc))
+        if epoch_limit != None:
+            valid_acc = valid_acc[:epoch_limit]
         res_performance = valid_acc.max()
     except:
         return None, None
     
-    labelled_set_path = os.path.join(round_base, 'labelled_set.txt')
-    with open(labelled_set_path, 'r') as f:
-        lines = f.read().split('\n')[:-1]
-    res_image = len(lines)
-
     return res_image, res_performance
 
 
-def visualise_performance_curves(performance_curves, axes):
+def visualise_performance_curves(performance_curves, axes, key_translation):
 
     for acq_name, curves in performance_curves.items():
 
@@ -38,7 +44,7 @@ def visualise_performance_curves(performance_curves, axes):
         images = curves[0][0][:extent]
         performance = np.mean([c[1][:extent] for c in curves], 0)
 
-        axes.plot(images, performance, label = acq_name)
+        axes.plot(images, performance, label = key_translation.get(acq_name, acq_name))
     
     return axes
 
@@ -47,7 +53,7 @@ def get_plot_point_daf():
     pass
 
 
-def cifar_baseline_al_curves(absolute_base, num_runs, max_round_nums, is_baseline):
+def cifar_baseline_al_curves(absolute_base, num_runs, max_round_nums, epoch_limit=None):
 
     all_perf_curves = {}
 
@@ -62,17 +68,16 @@ def cifar_baseline_al_curves(absolute_base, num_runs, max_round_nums, is_baselin
 
         performance, images = [], []
 
+        acq = config['acquisitionFunction']
+        key = (acq, config['roundProp'])
+
         for r in range(1, max_round_nums):
-            if is_baseline:
-                new_image, new_performance = get_plot_point_baseline(log_base, r)
-            else:
-                new_image, new_performance = get_plot_point_daf(log_base, r)
+            new_image, new_performance = get_plot_point_baseline(log_base, r, key, epoch_limit)
             if new_image is None: break
             images.append(new_image)
             performance.append(new_performance)
         
-        acq = config['acquisitionFunction']
-        key = (acq, config['roundProp'])
+
         all_perf_curves[key] = all_perf_curves.get(key, []) + [(images, performance)]
 
     return all_perf_curves

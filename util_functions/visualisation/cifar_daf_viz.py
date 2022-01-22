@@ -3,7 +3,7 @@ from glob import glob
 import pandas as pd
 import os
 
-def cifar_daf_al_curves(absolute_daf_base):
+def cifar_daf_al_curves(absolute_daf_base, epoch_limit=None):
 
     # Schema: {DAF architecture: [([image counts 1], [performances 1]), ([image counts 2], [performances 2])]}
     all_performance_curves = {}
@@ -21,7 +21,8 @@ def cifar_daf_al_curves(absolute_daf_base):
         performance, images = [], []
 
         # Find the DAF architecture
-        architecture = get_json(os.path.join(daf_base, 'daf_config.json'))['architecture_name']
+        daf_config = get_json(os.path.join(daf_base, 'daf_config.json'))
+        architecture = daf_config.get('architecture_name', daf_config['minibatch_prop'])
 
         # Iterate over rounds
         for nr in range(1, num_rounds+1):
@@ -35,6 +36,8 @@ def cifar_daf_al_curves(absolute_daf_base):
 
             # Add the best performance in that round to the curve
             valid_acc = pd.read_csv(os.path.join(round_base, 'log.txt'), sep='\t')['Valid Acc.']
+            if epoch_limit != None:
+                valid_acc = valid_acc[:epoch_limit]
             performance.append(valid_acc.max())# iloc[-1])
 
             if len(valid_acc) < 300: print(architecture, num_images, len(valid_acc))

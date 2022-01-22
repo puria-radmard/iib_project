@@ -57,7 +57,6 @@ if __name__ == '__main__':
     al.disable_tqdm()
 
     args = parser.parse_args()
-    state = {k: v for k, v in args._get_kwargs()}
 
     # Random seed
     if args.manualSeed is None:
@@ -199,6 +198,7 @@ if __name__ == '__main__':
         # Reinitialise the classification_model and the optimizer
         classification_model.reinit_model(make_ensemble(args, ensemble_size, num_classes).to(device))
         optimizer = torch.optim.SGD(classification_model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+        state = {k: v for k, v in args._get_kwargs()}
         criterion = nn.CrossEntropyLoss()
 
         print(f'\n\nRound: {round_num} | {len(train_image_dataset)} labelled')
