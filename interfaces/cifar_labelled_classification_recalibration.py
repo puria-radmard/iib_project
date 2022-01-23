@@ -2,7 +2,7 @@ import os, random, argparse, torch
 
 import active_learning as al
 from classes_utils.base.data import ClassificationDAFDataloader
-from config.ootb_architectures import convolutional_classification
+from config.ootb import convolutional_classification
 
 from interfaces.cifar_unsupervised_recalibration import set_up_active_learning
 from training_scripts.recalibration_scripts import labelled_classification_recalibration_script

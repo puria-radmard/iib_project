@@ -4,8 +4,7 @@ from classes_utils.layers import ReparameterisationLayer, EmptyLayer
 
 __all__ = [
     'DecoderBase',
-    'StaticAudioEncoderBase',
-    'MovingAudioEncoderBase'
+    'AudioEncoderBase',
 ]
 
 class DecoderBase(nn.Module):
@@ -41,6 +40,7 @@ class EncoderBase(nn.Module):
         self.variational = variational
         self.reparameterisation_layer = ReparameterisationLayer(embedding_dim//2) if variational else None
         self.return_skips = return_skips
+        self.embedding_dim = embedding_dim
 
     def eval(self, keep_dropouts_on):
         super().eval()
@@ -85,47 +85,15 @@ class ImageEncoderBase(EncoderBase):
         )
 
 
-class StaticAudioEncoderBase(EncoderBase):
+class AudioEncoderBase(EncoderBase):
 
     def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim):
-        super(StaticAudioEncoderBase, self).__init__(
+        self.mfcc_dim = mfcc_dim
+        super(AudioEncoderBase, self).__init__(
             layers, dropout_idxs, noise_idx, variational, embedding_dim
         )
 
     def forward(self, x):
         x = x.float()
-        x = x.permute(0, 2, 1)
-        x = x.permute(0, 2, 1)
+        # x = x.permute(0, 2, 1)
         return super().forward(x)
-
-    
-class MovingAudioEncoderBase(EncoderBase):
-
-    def __init__(self, mfcc_dim, layers, dropout_idxs, noise_idx, variational, embedding_dim, stride):
-        self.stride = stride
-        super(MovingAudioEncoderBase, self).__init__(
-            layers, dropout_idxs, noise_idx, variational, embedding_dim
-        )
-
-    def forward_once(self, x):
-        x = x.permute(0, 2, 1)
-        x = x.permute(0, 2, 1)
-        for l in self.layers:
-            x = l(x)
-        return x
-
-    def forward(self, x):
-        # Shift represents number of frames to shift for every forward pass
-        # Input x has shape: [batch, seqlen, mfcc]
-
-        output = []
-        
-        [batch, seqlen, mfcc] = x.shape
-
-        for i in list(range(0, seqlen, self.stride))[:-1]:
-            in_frames = x[:,i:i+self.num_frames]
-            if in_frames.shape[1] == self.num_frames:
-                out_frames = self.forward_once(in_frames)
-                output.append(out_frames)
-
-        return torch.stack(output, 1)

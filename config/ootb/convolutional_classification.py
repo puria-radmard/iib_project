@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from cifar_repo.models.cifar import densenet, resnet
-from config.ootb_architectures.creation_functions import make_embedding_loader_fc_network, make_unet_regression_architecture
+from config.ootb.creation_functions import make_embedding_loader_fc_network, make_unet_regression_architecture
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_OUT_CHANNELS, DEFAULT_UNET_ENCODER_STRIDES
 
 class InterfaceFriendlyModel(nn.Module):

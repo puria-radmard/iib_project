@@ -2,8 +2,8 @@ import os, json, torch
 from torch import nn
 import numpy as np
 from classes_utils.audio.data import AudioUtteranceDataset
-from config.ootb_architectures import long_recurrent_regression_network, short_recurrent_regression_network
-from config.ootb_architectures.listen_and_attend_regression import default_blstm_listener_self_attention_regression_architecture, default_blstm_listener_transformer_regression_architecture
+from config.ootb import long_recurrent_regression_network, short_recurrent_regression_network
+from config.ootb.las_reg import default_blstm_listener_self_attention_regression_architecture, default_blstm_listener_transformer_regression_architecture
 from training_scripts.audio_regression_scripts import audio_regression_script
 from util_functions.data import *
 from config import device
@@ -39,7 +39,6 @@ if __name__ == '__main__':
     parser.add_argument("--use_dim_stds", required=False, default=True)
 
     args = parser.parse_args()
-    # args.moving_encoder = (args.encoder_architecture in moving_encoder_types)
 
     if args.architecture_name == "short_recurrent_regression_network":
         model = short_recurrent_regression_network(args.cell_type, args.dropout, device)

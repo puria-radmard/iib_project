@@ -1,4 +1,6 @@
-from classes_utils.architecture.architecture_integration import AudioEncoderDecoderEnsemble, EncoderDecoderEnsemble, SkipEncoderDecoderEnsemble
+from classes_utils.architecture.architecture_integration import (
+    AudioEncoderDecoderEnsemble, EncoderDecoderEnsemble, SkipEncoderDecoderEnsemble
+)
 
 
 def make_recurrent_regression_architecture(
@@ -24,7 +26,7 @@ def make_recurrent_regression_architecture(
     }
 
     ensemble = AudioEncoderDecoderEnsemble(
-        ensemble_type, "basic_bidirectional_LSTM", "fc_decoder",
+        ensemble_type, "BidirectionalLSTMAudioEncoder", "FCDecoder",
         1, encoder_ensemble_kwargs, decoder_ensemble_kwargs
     ).to(device)
 
@@ -57,8 +59,8 @@ def make_unet_architecture(
 
     autoencoder_ensemble = SkipEncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='unet',
-        decoder_type='unet',
+        encoder_type='UNetEncoder',
+        decoder_type='UNetDecoder',
         ensemble_size=1,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,
         decoder_ensemble_kwargs=decoder_ensemble_kwargs,
@@ -93,8 +95,8 @@ def make_unet_regression_architecture(
 
     autoencoder_ensemble = SkipEncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='unet',
-        decoder_type='fc_decoder',
+        encoder_type='UNetEncoder',
+        decoder_type='FCDecoder',
         ensemble_size=1,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,
         decoder_ensemble_kwargs=decoder_ensemble_kwargs,
@@ -132,8 +134,8 @@ def make_staircase_autoencoder_architecture(
 
     autoencoder_ensemble = EncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='no_skip',
-        decoder_type='staircase',
+        encoder_type='NoSkipEncoder',
+        decoder_type='StaircaseConvolutionalDecoder',
         ensemble_size=ensemble_size,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,
         decoder_ensemble_kwargs=decoder_ensemble_kwargs,
@@ -143,20 +145,21 @@ def make_staircase_autoencoder_architecture(
     return autoencoder_ensemble
 
 
-def make_blstm_listener_self_attention_regression_architecture(
-        lstm_hidden_size, pyramid_size, key_size, value_size, query_size, num_heads,
-        decoder_layer_dims, decoder_nonlinearities, dropout, mfcc_dim=40
+def make_listener_self_attention_regression_architecture(
+        encoder_type, key_size, value_size, query_size, num_heads,
+        decoder_layer_dims, decoder_nonlinearities, dropout, 
+        mfcc_dim=40, **listener_kwargs
     ):
 
     encoder_ensemble_kwargs = {
         "mfcc_dim": mfcc_dim,
-        "lstm_hidden_size": lstm_hidden_size,
-        "pyramid_size": pyramid_size,
         "key_size": key_size,
         "query_size": query_size,
         "value_size": value_size,
         "num_heads": num_heads,
-        "variational": False
+        "dropout": dropout,
+        "variational": False,
+        **listener_kwargs
     }
 
     decoder_ensemble_kwargs = {
@@ -169,8 +172,8 @@ def make_blstm_listener_self_attention_regression_architecture(
 
     autoencoder_ensemble = EncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='blstm_listener_self_attention',
-        decoder_type='fc_decoder',
+        encoder_type=encoder_type,
+        decoder_type='FCDecoder',
         ensemble_size=1,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,
         decoder_ensemble_kwargs=decoder_ensemble_kwargs,
@@ -180,20 +183,21 @@ def make_blstm_listener_self_attention_regression_architecture(
     return autoencoder_ensemble
 
 
-def make_blstm_listener_transformer_regression_architecture(
-        pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, 
-        decoder_layer_dims, decoder_nonlinearities, dropout, mfcc_dim=40
+def make_listener_transformer_regression_architecture(
+        encoder_type, d_model, num_heads, hidden_sizes, num_attn_blocks, 
+        decoder_layer_dims, decoder_nonlinearities, dropout, 
+        mfcc_dim=40, **listener_kwargs
     ):
 
     encoder_ensemble_kwargs = {
         "mfcc_dim": mfcc_dim,
-        "pyramid_size": pyramid_size,
         "d_model": d_model,
         "num_heads": num_heads,
         "hidden_sizes": hidden_sizes,
         "num_attn_blocks": num_attn_blocks,
         "dropout": dropout,
-        "variational": False
+        "variational": False,
+        **listener_kwargs
     }
 
     decoder_ensemble_kwargs = {
@@ -206,8 +210,8 @@ def make_blstm_listener_transformer_regression_architecture(
 
     autoencoder_ensemble = EncoderDecoderEnsemble(
         ensemble_type='basic',
-        encoder_type='blstm_listener_transformer',
-        decoder_type='fc_decoder',
+        encoder_type=encoder_type,
+        decoder_type='FCDecoder',
         ensemble_size=1,
         encoder_ensemble_kwargs=encoder_ensemble_kwargs,
         decoder_ensemble_kwargs=decoder_ensemble_kwargs,
@@ -240,7 +244,7 @@ def make_simple__architecture(
     }
 
     ensemble = AudioEncoderDecoderEnsemble(
-        ensemble_type, "basic_bidirectional_LSTM", "fc_decoder",
+        ensemble_type, "BidirectionalLSTMAudioEncoder", "FCDecoder",
         1, encoder_ensemble_kwargs, decoder_ensemble_kwargs
     ).to(device)
 
@@ -261,7 +265,7 @@ def make_embedding_loader_fc_network(
     }
 
     model = AudioEncoderDecoderEnsemble(
-        'basic', "basic_bidirectional_LSTM", "fc_decoder",
+        'basic', None, "FCDecoder",
         1, encoder_kwargs, decoder_kwargs
     )
 

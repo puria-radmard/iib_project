@@ -1,12 +1,11 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from classes_utils.layers import EmptyLayer
 
 
 non_linearities = {
     'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'relu': nn.ReLU, 
-    'softmax': lambda:nn.Softmax(dim=-1), 'none': EmptyLayer
+    'softmax': lambda:nn.Softmax(dim=-1), 'none': nn.Identity
 }
 
 

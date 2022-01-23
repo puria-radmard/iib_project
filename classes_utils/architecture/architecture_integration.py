@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from util_functions.base import load_state_dict
 from config.ensemble import ensemble_method_dict
-from config.architectures import encoder_types, decoder_types
+from config import architectures
 
 __all__ = [
     'EncoderDecoderEnsemble',
@@ -19,15 +19,27 @@ class EncoderDecoderEnsemble(nn.Module):
     def __init__(self, ensemble_type, encoder_type, decoder_type, ensemble_size,
                 encoder_ensemble_kwargs, decoder_ensemble_kwargs, mult_noise=0, weights_path=None):
         super(EncoderDecoderEnsemble, self).__init__()
+        
+        # Get type of ensemble, e.g. simple, dropout, noise, etc
         ensemble_class = ensemble_method_dict[ensemble_type]
-        encoder_class = encoder_types[encoder_type]
-        decoder_class = decoder_types[decoder_type]
+
+        # Get encoder and decoder types
+        encoder_class = getattr(architectures, encoder_type)
+        decoder_class = getattr(architectures, decoder_type)
+
+        # Build encoder ensemble object
         self.encoder_ensemble = ensemble_class(
-            encoder_type = encoder_class, ensemble_size = ensemble_size, encoder_ensemble_kwargs = encoder_ensemble_kwargs
+            encoder_type = encoder_class, ensemble_size = ensemble_size, 
+            encoder_ensemble_kwargs = encoder_ensemble_kwargs
         )
+
+        # Build single decoder object
         self.decoder = decoder_class(**decoder_ensemble_kwargs)
+
+        # Add attributes for method calls later
         self.variational = self.encoder_ensemble.variational
         self.mult_noise = mult_noise
+
         load_state_dict(self, weights_path)
 
     def eval(self):
@@ -62,9 +74,6 @@ class EncoderDecoderEnsemble(nn.Module):
 
 class AudioEncoderDecoderEnsemble(EncoderDecoderEnsemble):
 
-    def __init__(self, ensemble_type, encoder_type, decoder_type, ensemble_size, encoder_ensemble_kwargs, decoder_ensemble_kwargs, mult_noise=0, weights_path=None):
-        super().__init__(ensemble_type, encoder_type, decoder_type, ensemble_size, encoder_ensemble_kwargs, decoder_ensemble_kwargs, mult_noise=mult_noise, weights_path=weights_path)
-
     def forward_method(self, x_in):
         _, seq_len, _ = x_in.shape
         # All of these are lists
@@ -79,9 +88,6 @@ class AudioEncoderDecoderEnsemble(EncoderDecoderEnsemble):
 
 
 class SkipEncoderDecoderEnsemble(EncoderDecoderEnsemble):
-
-    def __init__(self, ensemble_type, encoder_type, decoder_type, ensemble_size, encoder_ensemble_kwargs, decoder_ensemble_kwargs, mult_noise=0, weights_path=None):
-        super().__init__(ensemble_type, encoder_type, decoder_type, ensemble_size, encoder_ensemble_kwargs, decoder_ensemble_kwargs, mult_noise=mult_noise, weights_path=weights_path)
 
     def forward_method(self, x_in):
         if self.variational:

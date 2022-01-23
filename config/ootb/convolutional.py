@@ -3,7 +3,7 @@ from classes_architectures.cifar.decoder import (
     DEFAULT_UNET_DECODER_STRIDES, DEFAULT_UNET_DECODER_CONCATS,
 )
 from classes_architectures.cifar.encoder import DEFAULT_UNET_ENCODER_KERNEL_SIZES, DEFAULT_UNET_ENCODER_OUT_CHANNELS, DEFAULT_UNET_ENCODER_STRIDES
-from config.ootb_architectures.creation_functions import make_unet_architecture, make_staircase_autoencoder_architecture
+from config.ootb.creation_functions import make_unet_architecture, make_staircase_autoencoder_architecture
 
 
 def default_unet_network():

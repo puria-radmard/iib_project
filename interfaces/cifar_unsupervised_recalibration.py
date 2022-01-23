@@ -1,5 +1,4 @@
-import os, json, argparse, torch
-import random
+import os, argparse, torch, random
 from torch import nn
 
 from cifar_repo.cifar import transform_test
@@ -7,7 +6,7 @@ from cifar_repo.cifar import transform_test
 import active_learning as al
 
 from classes_utils.cifar.data import CIFAR100LabelledClassification, CIFAR100Subset, CIFAR10LabelledClassification, CIFAR10Subset
-from config.ootb_architectures import default_staircase_network, default_unet_network, no_skip_default_unet_network
+from config.ootb import default_staircase_network, default_unet_network, no_skip_default_unet_network
 from training_scripts.recalibration_scripts import unsupervised_recalibration_script
 from classes_utils.base.model import ModelWrapper
 from classes_losses.reconstrution import ImageReconstructionLoss

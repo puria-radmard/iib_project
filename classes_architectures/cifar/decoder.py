@@ -197,7 +197,8 @@ if __name__ == '__main__':
     
     if sys.argv[1] == 'unet':
 
-        encoder_type = decoder_type = 'unet'
+        encoder_type = 'UNetEncoder' 
+        decoder_type = 'UNetDecoder'
         
         encoder_ensemble_kwargs = {
             "input_size": (3, 32, 32),
@@ -228,7 +229,8 @@ if __name__ == '__main__':
     
     if sys.argv[1] == 'compressed_unet':
 
-        encoder_type = decoder_type = 'unet'
+        encoder_type = 'UNetEncoder' 
+        decoder_type = 'UNetDecoder'
         
         encoder_ensemble_kwargs = {
             "input_size": (3, 32, 32),

@@ -4,7 +4,7 @@ import numpy as np
 import random
 
 import active_learning as al
-from config.ootb_architectures import default_audio_unet_network, default_noskip_audio_unet_network
+from config.ootb import default_audio_unet_network, default_noskip_audio_unet_network
 from classes_losses.reconstrution import ReconstructionLoss
 from classes_utils.audio.data import SubsetAudioUtteranceDataset
 from training_scripts.recalibration_scripts import unsupervised_recalibration_script

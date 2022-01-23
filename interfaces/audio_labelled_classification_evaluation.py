@@ -7,7 +7,7 @@ from tqdm import tqdm
 from config import device
 
 from util_functions.data import coll_fn_utt, generate_data_dict_utt, add_certainties_to_data_dict
-from config.ootb_architectures import (
+from config.ootb import (
     default_blstm_listener_self_attention_regression_architecture, 
     default_blstm_listener_transformer_regression_architecture
 )

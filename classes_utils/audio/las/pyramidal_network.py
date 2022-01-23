@@ -14,9 +14,7 @@ class pBLSTMLayer(nn.Module):
         i.e. instead of feeding previous layer directly, feed in concatentation of consecutive layers
     """
 
-    def __init__(
-        self, input_size, hidden_size, num_layers, dropout, 
-    ):
+    def __init__(self, input_size, hidden_size, num_layers, dropout):
         super(pBLSTMLayer, self).__init__()
 
         self.BLSTM = nn.LSTM(

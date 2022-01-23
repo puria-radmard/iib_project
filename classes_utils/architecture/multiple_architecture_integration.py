@@ -1,8 +1,8 @@
 import torch
 from torch import nn
+from config import architectures
 from util_functions.base import load_state_dict
 from config.ensemble import ensemble_method_dict
-from config.architectures import encoder_types, decoder_types
 
 
 __all__ = [
@@ -22,7 +22,8 @@ class MultipleEncoderDecoderEnsemble(nn.Module):
         super(MultipleEncoderDecoderEnsemble, self).__init__()
         
         ensemble_class = ensemble_method_dict[ensemble_type]
-        encoder_class = encoder_types[encoder_type]
+        encoder_class = getattr(architectures, encoder_type)
+        
         self.encoder_ensemble = ensemble_class(
             encoder_type = encoder_class, ensemble_size = ensemble_size, 
             encoder_ensemble_kwargs = encoder_ensemble_kwargs
@@ -31,7 +32,7 @@ class MultipleEncoderDecoderEnsemble(nn.Module):
         decoders = []
         decoder_iterator = zip(decoder_names, decoder_ensemble_kwargs_list)
         for decoder_name, decoder_ensemble_kwargs in decoder_iterator:
-            decoder_class = decoder_types[decoder_name]
+            decoder_class = getattr(architectures, decoder_name)
             decoder = decoder_class(**decoder_ensemble_kwargs)   
             decoders.append(decoder)
         

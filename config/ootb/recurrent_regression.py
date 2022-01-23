@@ -1,4 +1,4 @@
-from config.ootb_architectures.creation_functions import make_recurrent_regression_architecture
+from config.ootb.creation_functions import make_recurrent_regression_architecture
 
 
 def short_recurrent_regression_network(cell_type, dropout, device):

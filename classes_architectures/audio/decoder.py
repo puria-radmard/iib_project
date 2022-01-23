@@ -144,8 +144,8 @@ if __name__ == '__main__':
     from classes_utils.architecture import AudioEncoderDecoderEnsemble
 
     ensemble_type='basic'
-    encoder_type='only_bidirectional_LSTM'
-    decoder_type='no_decoder'
+    encoder_type='BidirectionalLSTMOnlyAudioEncoder'
+    decoder_type='EmptyLayer'
     ensemble_size=1
     encoder_ensemble_kwargs=dict(
         mfcc_dim=40, 
