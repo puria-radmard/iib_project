@@ -58,9 +58,9 @@ class MovingDNNLayer(nn.Module):
         padding_length = self.stride - (remove_top % self.stride)
 
         if remove_top < 0:    # Not enough for one forward pass
-            padding = torch.zeros(B, abs(remove_top), D)
+            padding = torch.zeros(B, abs(remove_top), D).to(x.device)
         else:
-            padding = torch.zeros(B, padding_length, D)
+            padding = torch.zeros(B, padding_length, D).to(x.device)
 
         return torch.cat([x, padding], dim=1)
 
@@ -89,10 +89,7 @@ class MovingDNNLayer(nn.Module):
     def forward(self, x):
         padded_x = self.pad_sample(x)
         stacked_x = self.parallel_stack(padded_x)
-        try:
-            layers_output = self.layers(stacked_x)
-        except:
-            import pdb; pdb.set_trace()
+        layers_output = self.layers(stacked_x)
 
         layers_output = layers_output.transpose(1, 2)
         layers_output = self.bn(layers_output)
@@ -207,8 +204,8 @@ class TDNNPadding(nn.Module):
         if padding_required <= 0:
             return x
         else:
-            left_padding = torch.zeros([B, int(floor(padding_required/2)), D])
-            right_padding = torch.zeros([B, int(ceil(padding_required/2)), D])
+            left_padding = torch.zeros([B, int(floor(padding_required/2)), D]).to(x.device)
+            right_padding = torch.zeros([B, int(ceil(padding_required/2)), D]).to(x.device)
             return torch.cat([left_padding, x, right_padding], dim = 1)
 
 

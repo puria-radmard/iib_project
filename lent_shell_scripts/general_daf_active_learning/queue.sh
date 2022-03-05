@@ -4,12 +4,12 @@
 #$ -S /bin/bash
 
 source /home/alta/Users/pr450/anaconda3/etc/profile.d/conda.sh
-conda activate bias_investigation
-export PYTHONBIN=/home/alta/Users/pr450/anaconda3/envs/bias_investigation/bin/python
+conda activate easter_env
+export PYTHONBIN=/home/alta/Users/pr450/anaconda3/envs/easter_env/bin/python
 
 echo $0 $@
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/bias_investigation/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/easter_env/lib
 
 dataset=$1
 baseDAFPath=$2 # e.g. /home/alta/BLTSpeaking/exp-pr450/lent_logs/cifar_daf_recalibration/round_history-0

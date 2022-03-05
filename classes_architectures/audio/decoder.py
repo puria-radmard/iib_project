@@ -119,7 +119,6 @@ class FCDecoder(DecoderBase):
         super(FCDecoder, self).__init__(mean_first=mean_first)
         
         # nonlinearities[i] is placed after the layer that OUTPUTS layer_dims[i]
-        
         layers = [
             nn.Linear(embedding_dim, layer_dims[0]),
             non_linearities_dict[nonlinearities[0]](),

@@ -185,7 +185,7 @@ def make_listener_self_attention_regression_architecture(
 
 def make_listener_transformer_regression_architecture(
         encoder_type, d_model, num_heads, hidden_sizes, num_attn_blocks, 
-        decoder_layer_dims, decoder_nonlinearities, dropout, 
+        decoder_layer_dims, decoder_nonlinearities, dropout, aggregation,
         mfcc_dim=40, **listener_kwargs
     ):
 
@@ -195,6 +195,7 @@ def make_listener_transformer_regression_architecture(
         "num_heads": num_heads,
         "hidden_sizes": hidden_sizes,
         "num_attn_blocks": num_attn_blocks,
+        "transformer_aggregation": aggregation,
         "dropout": dropout,
         "variational": False,
         **listener_kwargs
@@ -249,24 +250,3 @@ def make_simple__architecture(
     ).to(device)
 
     return ensemble
-
-
-def make_embedding_loader_fc_network(
-        embedding_cache_path, embedding_dim, layer_dims, nonlinearities, dropout
-    ):
-    
-    encoder_kwargs = {"embedding_cache_path": embedding_cache_path, "embedding_dim": embedding_dim}
-    decoder_kwargs = {
-        "embedding_dim": embedding_dim,
-        "layer_dims": layer_dims,
-        "nonlinearities": nonlinearities,
-        "dropout_rate": dropout,
-        "mean_first": False
-    }
-
-    model = AudioEncoderDecoderEnsemble(
-        'basic', None, "FCDecoder",
-        1, encoder_kwargs, decoder_kwargs
-    )
-
-    return model

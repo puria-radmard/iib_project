@@ -12,7 +12,18 @@ __all__ = [
     "EmptyLayer",
     "AdditiveGaussianLayer",
     "MultiplicativeGaussianLayer",
+    "EmbeddingLoadingLayer"
 ]
+
+
+class EmbeddingLoadingLayer(nn.Module):
+
+    def __init__(self, path):
+        super(EmbeddingLoadingLayer, self).__init__()
+        self.embeddings = torch.load(path)
+
+    def forward(self, i):
+        return self.embeddings[i].to(device)
 
 
 class BidirectionalLSTMHiddenStateStacker(nn.Module):

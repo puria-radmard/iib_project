@@ -12,21 +12,23 @@ export CUDA_VISIBLE_DEVICES=$X_SGE_CUDA_DEVICE
 echo $CUDA_VISIBLE_DEVICES
 
 source /home/alta/Users/pr450/anaconda3/etc/profile.d/conda.sh
-conda activate bias_investigation
-export PYTHONBIN=/home/alta/Users/pr450/anaconda3/envs/bias_investigation/bin/python
+conda activate easter_env
+export PYTHONBIN=/home/alta/Users/pr450/anaconda3/envs/easter_env/bin/python
 
 echo $0 $@
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/bias_investigation/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alta/Users/pr450/anaconda3/envs/easter_env/lib
 
 
 lr=$1
-architecture=$2
-num_epochs=$3
-alignment_paths=`echo "$4" | tr , " "`
+criterion=$2
+architecture=$3
+num_epochs=$4
+alignment_paths=`echo "$5" | tr , " "`
 
 python -m interfaces.audio_uncertainty_regression \
     --architecture_name $architecture \
+    --criterion $criterion \
     --lr $lr \
     --num_epochs $num_epochs \
     --scheduler_epochs 5 \

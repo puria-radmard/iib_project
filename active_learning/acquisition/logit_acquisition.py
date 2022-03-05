@@ -9,6 +9,10 @@ class RandomBaselineAcquisition(UnitwiseAcquisition):
         self.score_shape_func = score_shape_func
         # self.score_shape = self.dataset.last_logits[0].max(axis=-1).shape
 
+    @staticmethod
+    def _score_from_logits(logits):
+        return torch.rand_like(logits)
+
     def score(self, batch_indices):
         batch_output = []
         for i in batch_indices:
@@ -22,10 +26,15 @@ class LowestConfidenceAcquisition(UnitwiseAcquisition):
     def __init__(self, dataset):
         super().__init__(dataset=dataset)
 
+    @staticmethod
+    def _score_from_logits(logits):
+        return - F.softmax(logits, dim=-1).max(axis=-1).values
+
     def score(self, batch_indices):
         batch_output = []
         for i in batch_indices:
-            batch_output.append(- self.dataset.last_logits[i].max(axis=-1).values)
+            logits = self.dataset.last_logits[i]
+            batch_output.append(self._score_from_logits(logits))
         return batch_output
 
 
@@ -33,11 +42,16 @@ class MarginAcquisition(UnitwiseAcquisition):
     def __init__(self, dataset):
         super().__init__(dataset=dataset)
 
+    @staticmethod
+    def _score_from_logits(logits):
+        pmf = F.softmax(logits)
+        return - (pmf.max(axis=-1).values - pmf.min(axis=-1).values)
+
     def score(self, batch_indices):
         batch_output = []
         for i in batch_indices:
             logits = self.dataset.last_logits[i]
-            batch_output.append(- (logits.max(axis=-1).values - logits.min(axis=-1).values))
+            batch_output.append(self._score_from_logits(logits))
         return batch_output
 
 
@@ -45,10 +59,15 @@ class MaximumEntropyAcquisition(UnitwiseAcquisition):
     def __init__(self, dataset):
         super().__init__(dataset=dataset)
 
+    @staticmethod
+    def _score_from_logits(logits):
+        return torch.distributions.Categorical(logits=logits).entropy()
+
     def score(self, batch_indices):
         batch_output = []
         for i in batch_indices:
-            cater = torch.distributions.Categorical(logits=self.dataset.last_logits[i])
+            logits = self.self.dataset.last_logits[i]
+            cater = self._score_from_logits(logits)
             batch_output.append(cater.entropy())
         return batch_output
 

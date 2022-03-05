@@ -10,7 +10,11 @@ from cifar_repo.cifar import (
     transform_train, transform_test, train, test, adjust_learning_rate
 )
 from classes_utils.cifar.data import CIFAR100Subset, CIFAR100, CIFAR10Subset, CIFAR10
+from util_functions.base import torch_manual_script
 
+
+# Use CUDA
+use_cuda = torch.cuda.is_available()    
 
 parser = argparse.ArgumentParser()
 
@@ -41,7 +45,7 @@ class Config:
         self.__dict__.update(d)
 
 
-def main(subset_indices, mirrored_args):
+def train_cifar_subset_main(subset_indices, mirrored_args, state):
 
     start_epoch = mirrored_args.start_epoch  # start from epoch 0 or last checkpoint epoch
 
@@ -114,8 +118,7 @@ def main(subset_indices, mirrored_args):
     logger.plot()
     # savefig(os.path.join(mirrored_args.checkpoint, 'log.eps'))
 
-    print('Best acc:')
-    print(best_acc)
+    return model
 
 
 if __name__ == '__main__':
@@ -128,26 +131,17 @@ if __name__ == '__main__':
     with open(args.mirrored_config_json_path, 'r') as jf:
         args.update(json.load(jf))
 
-    state = args.__dict__
+    args_state = args.__dict__
 
     # Validate dataset
     assert args.dataset == 'cifar10' or args.dataset == 'cifar100', 'Dataset can only be cifar10 or cifar100.'
 
-    # Use CUDA
-    use_cuda = torch.cuda.is_available()
-
     # Random seed
-    if args.manualSeed is None:
-        args.manualSeed = random.randint(1, 10000)
-    print('\nSeed:', args.manualSeed, '\n')
-    random.seed(args.manualSeed)
-    torch.manual_seed(args.manualSeed)
-    if use_cuda:
-        torch.cuda.manual_seed_all(args.manualSeed)
+    torch_manual_script(args)
 
     with open(args.subset_index_path, 'r') as f:
         indices = f.read().split('\n')[:-1]
         assert len(indices) == args.subset_size
     subset_indices = list(map(lambda x: int(x), indices))
 
-    main(subset_indices, args)
+    train_cifar_subset_main(subset_indices, args, args_state)

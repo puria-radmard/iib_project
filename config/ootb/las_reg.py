@@ -5,8 +5,8 @@ from config.ootb.creation_functions import (
 )
 
 DEFAULT_MOVING_DNN_LISTENER_KWARGS = {
-    "listener_num_frames": [50, 15],
-    "listener_strides": [50, 5],
+    "listener_num_frames": [30, 15],
+    "listener_strides": [25, 5],
     "listener_hidden_dims": [
         [256, 256],
         [256, 256]
@@ -15,85 +15,94 @@ DEFAULT_MOVING_DNN_LISTENER_KWARGS = {
 }
 
 DEFAULT_TDNN_LISTENER_KWARGS = {
-    "listener_output_dims": [128, 1028, 256],
+    "listener_output_dims": [128, 512, 256],
     "listener_context_idxs": [[-2, -1, 0, 1, 2], [-4, 0, 4], [-7, 0, 7]],
     "listener_non_lin_funcs": ['relu', 'relu', 'relu'],
     "listener_strides": [3, 1, 1]
 }
 
 
-def _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification=True):
-    if classification:
-        act = 'none' if use_logits else 'softmax'
-    else:
-        act = 'sigmoid'
+def _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, head_size):
+    
+    # Determine number of heads at the end of all the attention stuff
+    head_size = head_size
+
     return make_listener_self_attention_regression_architecture(
         encoder_type=encoder_type,
         key_size=32,
         value_size=32,
         query_size=32,
         num_heads=8,
-        decoder_layer_dims=[2 if classification else 1],
-        decoder_nonlinearities=[act],
+        decoder_layer_dims=[head_size],
+
+        # Always using logits now, even for classification
+        # This is because in the audio_uncertinaty_regression, we define out own
+        # `muzzle` for the model, depending on the task
+        decoder_nonlinearities=['none'],
         dropout=dropout,
         mfcc_dim=40,
         **listener_kwargs
     )
 
 
-def _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification=True):
-    if classification:
-        act = 'none' if use_logits else 'softmax'
-    else:
-        act = 'sigmoid'
+def _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, head_size, aggregation):
+
+    # Determine number of heads at the end of all the attention stuff
+    head_size = head_size
+
     return make_listener_transformer_regression_architecture(
         encoder_type=encoder_type,
         d_model=256,
         num_heads=8,
         hidden_sizes=[2048],
         num_attn_blocks=2,
-        decoder_layer_dims=[2 if classification else 1],
-        decoder_nonlinearities=[act],
+        decoder_layer_dims=[head_size],
+
+        # Always using logits now, even for classification
+        # This is because in the audio_uncertinaty_regression, we define out own
+        # `muzzle` for the model, depending on the task
+        decoder_nonlinearities=['none'],
         dropout=dropout,
         mfcc_dim=40,
+        aggregation=aggregation,
         **listener_kwargs
     )
 
 
-def default_blstm_listener_self_attention_regression_architecture(dropout, use_logits, classification=True):
+def default_blstm_listener_self_attention_regression_architecture(dropout, head_size):
     listener_kwargs = {"lstm_hidden_size": 128, "pyramid_size": 3}
     encoder_type = 'BLSTMListenerSelfAttentionEncoder'
-    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, head_size)
 
 
-def default_blstm_listener_transformer_regression_architecture(dropout, use_logits, classification=True):
+def default_blstm_listener_transformer_regression_architecture(dropout, head_size, aggregation='mean'):
     listener_kwargs = {"pyramid_size": 3}
     encoder_type = 'BLSTMListenerTransformerEncoder'
-    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, head_size, aggregation)
 
 
-def default_moving_dnn_listener_self_attention_regression_architecture(dropout, use_logits, classification=True):
+def default_moving_dnn_listener_self_attention_regression_architecture(dropout, head_size):
     listener_kwargs = DEFAULT_MOVING_DNN_LISTENER_KWARGS
     encoder_type = 'SlidingDNNListenerSelfAttentionEncoder'
-    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, head_size)
 
 
-def default_moving_dnn_listener_transformer_regression_architecture(dropout, use_logits, classification=True):
+def default_moving_dnn_listener_transformer_regression_architecture(dropout, head_size, aggregation='mean'):
     listener_kwargs = DEFAULT_MOVING_DNN_LISTENER_KWARGS
     encoder_type = 'SlidingDNNListenerTransformerEncoder'
-    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, head_size, aggregation)
 
 
-def default_tdnn_listener_self_attention_regression_architecture(dropout, use_logits, classification=True):
+def default_tdnn_listener_self_attention_regression_architecture(dropout, head_size):
     listener_kwargs = DEFAULT_TDNN_LISTENER_KWARGS
     encoder_type = 'TDNNListenerSelfAttentionEncoder'
-    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_self_attention_regression_architecture(encoder_type, listener_kwargs, dropout, head_size)
 
 
-def default_tdnn_listener_transformer_regression_architecture(dropout, use_logits, classification=True):
+def default_tdnn_listener_transformer_regression_architecture(dropout, head_size, aggregation='mean'):
     listener_kwargs = DEFAULT_TDNN_LISTENER_KWARGS
     encoder_type = 'TDNNListenerTransformerEncoder'
-    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, use_logits, classification)
+    return _default_transformer_regression_architecture(encoder_type, listener_kwargs, dropout, head_size, aggregation)
 
 
 if __name__ == '__main__':

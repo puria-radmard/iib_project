@@ -48,7 +48,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M', required
 
 def configure_labelled_classifier_caller(args):
     model_caller = getattr(convolutional_classification, args.architecture_name)
-    labelled_classifier_caller = lambda : model_caller(args.dropout, use_logits = True)
+    labelled_classifier_caller = lambda : model_caller(dropout = args.dropout, use_logits = True)
     return labelled_classifier_caller
 
 

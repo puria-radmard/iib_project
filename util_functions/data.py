@@ -23,7 +23,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def add_certainties_to_data_dict(data_dict, alignment_paths):
+def add_certainties_to_data_dict(data_dict, alignment_paths, negative=False):
     certainty_dict, seen_utterances = get_certainties_from_multiple_ctms(
         alignment_paths
     )
@@ -33,7 +33,8 @@ def add_certainties_to_data_dict(data_dict, alignment_paths):
         if utt_id in seen_utterances:
             for k in data_dict.keys():
                 new_data_dict[k].append(data_dict[k][i])
-            new_data_dict["certainties"].append(certainty_dict[utt_id])
+            new_certainty = -certainty_dict[utt_id] if negative else certainty_dict[utt_id]
+            new_data_dict["certainties"].append(new_certainty)
     return new_data_dict
 
 
@@ -53,7 +54,7 @@ def data_dict_length_split(data_dict, max_len):
     return new_data_dict
 
 
-def generate_data_dict_utt(features_paths, text_path=None):
+def generate_data_dict_utt(features_paths, exclude_ami = False, text_path=None):
     if isinstance(features_paths, str):
         gg = list(load_ark(features_paths))
     elif isinstance(features_paths, list):
@@ -61,8 +62,12 @@ def generate_data_dict_utt(features_paths, text_path=None):
         for fp in features_paths:
             gg.extend(list(load_ark(fp)))
 
-    utt_ids = [h[0] for h in gg]
-    utt_mfcc = [h[1] for h in gg]
+    if exclude_ami:
+        utt_ids = [h[0] for h in gg if h[0][0] !='A']
+        utt_mfcc = [h[1] for h in gg if h[0][0] !='A']
+    else:
+        utt_ids = [h[0] for h in gg]
+        utt_mfcc = [h[1] for h in gg]
 
     if text_path:
         with open(text_path, "r") as f:
@@ -83,8 +88,11 @@ def split_data_dict_by_labelled(data_dict, labelled_utt_list_path, unlabelled_ut
     else:
         labelled_utt_ids = set()
 
-    with open(unlabelled_utt_list_path, "r") as f:
-        unlabelled_utt_ids = set(f.read().split("\n")[:-1])
+    if unlabelled_utt_list_path is not None:
+        with open(unlabelled_utt_list_path, "r") as f:
+            unlabelled_utt_ids = set(f.read().split("\n")[:-1])
+    else:
+        unlabelled_utt_ids = set()
 
     assert (
         labelled_utt_ids.intersection(unlabelled_utt_ids) == set()
@@ -116,16 +124,55 @@ def split_data_dict_by_labelled(data_dict, labelled_utt_list_path, unlabelled_ut
 
 
 def coll_fn_utt(instances):
+
+    # Input will look like {attr_name: [list of attr values]}
     res = {}
+
+    # Loop over attrs
     for k in instances[0].keys():
+
+        # Get the kth value in the batch for this attr
         inses = [ins[k] for ins in instances]
+
+        # If it is an array for this attr, make it a tensor
         try: res[k] = torch.tensor(inses)
         except: res[k] = inses
+    
+    # Process the audio as required, but don't change the other
     audio = [torch.tensor(ins["audio"]) for ins in instances]
     packed_audio = nn.utils.rnn.pack_sequence(audio, enforce_sorted=False)
     padded, lengths = nn.utils.rnn.pad_packed_sequence(packed_audio, batch_first=True)
     res["padded_features"] = padded
+
     return res
+
+
+def coll_fn_utt_multitask(input_keys, target_keys):
+
+    def collation_func(instances):
+        # This will give a tuple of size two of the batch attributes
+        # First tuple will be the inputs we require, second will be targets
+        
+        # input_keys is a list of attr names that go into the first item, etc.
+        # If either input_keys or target_keys is size 1, that tuple will be unpacked in
+        # the main tuple
+
+        # Run the original function to get the dictionary
+        attr_dict = coll_fn_utt(instances)
+
+        # Get the input element of the tuple, as in docstring
+        input_attrs = [attr_dict[ik] for ik in input_keys]
+        input_attrs = input_attrs[0] if len(input_keys) == 1 else tuple(input_attrs)
+        
+        # Same for the target attributes
+        target_attrs = [attr_dict[ik] for ik in target_keys]
+        target_attrs = target_attrs[0] if len(target_keys) == 1 else tuple(target_attrs)
+    
+        # Return as tuple
+        return input_attrs, target_attrs
+
+    return collation_func
+
 
 
 def coll_fn_utt_with_channel_insersion(instances):

@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -127,3 +128,51 @@ class SelfAttentionTranformerLayer(nn.Module):
         feed_forward_network_output = self.feed_forward(add_and_norm_output_1)
         add_and_norm_output_2 = self.layer_norm_2(feed_forward_network_output + add_and_norm_output_1)
         return add_and_norm_output_2
+
+
+class SelfAttentionTranformerStack(nn.Module):
+
+    def __init__(self, d_model, num_heads, hidden_sizes, num_transformer_layers, non_linearity='relu', aggregation='mean'):
+
+        super(SelfAttentionTranformerStack, self).__init__()
+
+        # Only three kinds of aggregation implemented for now
+        assert aggregation in ['mean', 'cls', 'none']
+        self.aggregation = aggregation
+
+        # Generate the block
+        self.self_attentions = nn.Sequential(
+            *([SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes, non_linearity=non_linearity)] * num_transformer_layers)
+        )
+
+        if aggregation == 'cls':
+
+            # The CLS token is learnable -> requires grad
+            self.CLS = torch.nn.Parameter(torch.randn(d_model), requires_grad=True)
+
+    def forward(self, x):
+
+        # If we are using CLS aggregation, then append it to the sequence now
+        if self.aggregation == 'cls':
+
+            # Repeat for each sequence
+            b, s, d = x.shape
+            cls_slice = torch.tile(self.CLS, (b, 1, 1))
+
+            # Add it to the sequence
+            x = torch.hstack([cls_slice, x])
+
+        # Apply actual attention stack
+        y = self.self_attentions(x)
+
+        # If we are using CLS aggregation, then recover it from the sequence now
+        if self.aggregation == 'cls':
+
+            # Shape of y should be the same as the shape of x
+            y = y[:,0,:]
+
+        # Mean over the sequence length
+        elif self.aggregation == 'mean':
+            y = torch.mean(y, dim=1)
+
+        return y

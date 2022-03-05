@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 
 device = (
     torch.device('cuda') if torch.cuda.is_available() 
@@ -100,6 +101,7 @@ def train_autoencoder_ensemble(
     
     return ensemble, results
 
+
 def train_daf_labelled_classification(
     classifier,
     optimizer,
@@ -196,4 +198,92 @@ def train_daf_labelled_classification(
         )
     
     return classifier, results
+
+
+def train_daf_acquisition_regression(
+    regressor,
+    optimizer,
+    scheduler,
+    scheduler_epochs,
+    decodings_criterion,
+    train_dataloader,
+    test_dataloader,
+    num_epochs,
+    show_print=True
+):
+
+    results = []
+
+    for epoch in range(num_epochs):
+
+        epoch_dec_loss, instance_count = 0, 0
+        regressor.train()
+        decodings_criterion.train()
+
+        for inputs, targets in train_dataloader:
+
+            if inputs.shape[0] == 1:
+                # Batch norm
+                continue
+
+            optimizer.zero_grad()
+
+            inputs = inputs.to(device)
+            targets = [t.to(device).float() for t in targets] if isinstance(targets, list) else targets.to(device).float()
+
+            encodings, decodings = regressor(inputs)
+
+
+            decodings_loss = decodings_criterion(decodings[0], targets)
+	          
+            decodings_loss.backward()
+            optimizer.step()            
+
+            epoch_dec_loss += decodings_loss.item()
+            instance_count += len(inputs)
+
+            torch.cuda.empty_cache()
+            
+
+        test_epoch_dec_loss, test_instance_count = 0, 0
+        regressor.eval()
+        decodings_criterion.eval()
+
+        for inputs, targets in test_dataloader:
+
+            inputs = inputs.to(device)
+            targets = [t.to(device).float() for t in targets] if isinstance(targets, list) else targets.to(device).float()
+            
+            encodings, decodings = regressor(inputs)
+
+            decodings_loss = decodings_criterion(decodings[0], targets)
+	        
+            test_epoch_dec_loss += decodings_loss.item()
+            test_instance_count += len(inputs)
+
+            torch.cuda.empty_cache()
+
+        if test_instance_count == 0:
+            test_instance_count += 1
+        if instance_count == 0:
+            instance_count += 1
+
+        if show_print:
+            print_string = f'\n\nEpoch {epoch}'
+            print_string += f'\n\ttrain_dec_loss {epoch_dec_loss/instance_count}'
+            print_string += f'\n\ttest_dec_loss {test_epoch_dec_loss/test_instance_count}'
+            print(print_string,flush=True,)
+            
+        if epoch + 1 in scheduler_epochs:
+            scheduler.step()
+
+        results.append(
+            {
+                'epoch': epoch,
+                'train dec loss': float(epoch_dec_loss/instance_count), 
+                'test dec loss': float(test_epoch_dec_loss/test_instance_count), 
+            }
+        )
+    
+    return regressor, results
 

@@ -1,7 +1,7 @@
-import os, torch
-import json
+import os, torch, json, random
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+use_cuda = torch.cuda.is_available()
 
 
 def load_state_dict(model, weights_path):
@@ -33,7 +33,7 @@ def batch_outer(z_i, z):
 
 
 def config_savedir(base_save_dir, args):
-  
+
     i=0
     while True:
         try:
@@ -42,7 +42,7 @@ def config_savedir(base_save_dir, args):
             break
         except:
             i+=1
-        if i>50:
+        if i>200:
             raise Exception("Too many folders!")
 
     saveable_args = vars(args)
@@ -54,3 +54,13 @@ def config_savedir(base_save_dir, args):
     print(f"Config dir : {save_dir}\n", flush=True)
 
     return save_dir
+
+
+def torch_manual_script(args):
+    if args.manualSeed is None:
+        args.manualSeed = random.randint(1, 10000)
+    print('\nSeed:', args.manualSeed, '\n')
+    random.seed(args.manualSeed)
+    torch.manual_seed(args.manualSeed)
+    if use_cuda:
+        torch.cuda.manual_seed_all(args.manualSeed)

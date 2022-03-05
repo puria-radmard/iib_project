@@ -83,7 +83,6 @@ class AverageOfReconstructionLossesMetric(UnitwiseAcquisition):
         return image_metrics
 
 
-
 class ReconstructionDisagreementMetric(UnitwiseAcquisition):
     """
     L_3 = L_2 - L_1
@@ -119,8 +118,13 @@ class LabelledRankMetric(UnitwiseAcquisition):
         super().__init__(dataset)
     
     def score(self, batch_indices):
+        
+        # Get logits for the relevant batchs
         if self.dataset.is_stochastic:
-            preds = [self.dataset.last_logits[i][0][0] for i in batch_indices]
+            logits = [self.dataset.last_logits[i][0] for i in batch_indices]
         else:
-            preds = [self.dataset.last_logits[i][0] for i in batch_indices]
+            logits = [self.dataset.last_logits[i] for i in batch_indices]
+
+        # Softmax logits to get the probabilities
+        preds = [F.softmax(ll)[0] for ll in logits]
         return preds

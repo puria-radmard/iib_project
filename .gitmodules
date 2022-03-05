@@ -1,0 +1,3 @@
+[submodule "torchsort"]
+	path = torchsort
+	url = git@github.com:teddykoker/torchsort.git

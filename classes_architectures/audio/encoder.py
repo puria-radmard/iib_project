@@ -1,5 +1,5 @@
 from torch import nn
-from classes_utils.audio.las.attention import SelfAttention, SelfAttentionTranformerLayer
+from classes_utils.audio.las.attention import SelfAttention, SelfAttentionTranformerStack
 from classes_utils.audio.las.pyramidal_network import pBLSTMLayer, PrepForPyramid
 from classes_utils.audio.las.tdnn import MovingDNNLayer, TDNNLayer, TDNNPadding
 from util_functions.base import load_state_dict
@@ -125,14 +125,12 @@ class BLSTMListenerSelfAttentionEncoder(AudioEncoderBase):
 
 class BLSTMListenerTransformerEncoder(AudioEncoderBase):
     
-    def __init__(self, mfcc_dim, pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, dropout, variational):
+    def __init__(self, mfcc_dim, pyramid_size, d_model, num_heads, hidden_sizes, num_attn_blocks, transformer_aggregation, dropout, variational):
 
         layers = [PrepForPyramid(pyramid_size=pyramid_size)]
         layers += [pBLSTMLayer(input_size=mfcc_dim, hidden_size=d_model//2, num_layers=1, dropout=dropout)]
         layers += [pBLSTMLayer(input_size=d_model, hidden_size=d_model//2, num_layers=1, dropout=dropout)] * (pyramid_size-1)
-        layers += [SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes)] * num_attn_blocks
-        layers += [MeanLayer(dim=1)]
-        
+        layers += [SelfAttentionTranformerStack(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes, num_transformer_layers=num_attn_blocks, aggregation=transformer_aggregation)]
         layers = nn.ModuleList(layers)
 
         super(BLSTMListenerTransformerEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, d_model)
@@ -165,7 +163,7 @@ class SlidingDNNListenerTransformerEncoder(AudioEncoderBase):
 
     def __init__(
         self, mfcc_dim, listener_num_frames, listener_strides, listener_hidden_dims, listener_non_lin_funcs, 
-        d_model, num_heads, hidden_sizes, num_attn_blocks, dropout, variational
+        d_model, num_heads, hidden_sizes, num_attn_blocks, transformer_aggregation, dropout, variational
     ):
         layers = [
             MovingDNNLayer(mfcc_dim, listener_num_frames[0], listener_strides[0], 
@@ -176,9 +174,7 @@ class SlidingDNNListenerTransformerEncoder(AudioEncoderBase):
                 MovingDNNLayer(listener_hidden_dims[i-1][-1], listener_num_frames[i], listener_strides[i], 
                 listener_hidden_dims[i], listener_non_lin_funcs[i], dropout)
             )
-        layers += [SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes)] * num_attn_blocks
-        layers += [MeanLayer(dim=1)]
-
+        layers += [SelfAttentionTranformerStack(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes, num_transformer_layers=num_attn_blocks, aggregation=transformer_aggregation)]
         layers = nn.ModuleList(layers)
 
         super(SlidingDNNListenerTransformerEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, d_model)
@@ -212,7 +208,7 @@ class TDNNListenerTransformerEncoder(AudioEncoderBase):
     
     def __init__(
         self, mfcc_dim, listener_output_dims, listener_context_idxs, listener_non_lin_funcs, listener_strides, 
-        d_model, num_heads, hidden_sizes, num_attn_blocks, dropout, variational
+        d_model, num_heads, hidden_sizes, num_attn_blocks, transformer_aggregation, dropout, variational
     ):
         tdnn_layers = [
             TDNNLayer(mfcc_dim, listener_output_dims[0], listener_context_idxs[0], 
@@ -224,9 +220,7 @@ class TDNNListenerTransformerEncoder(AudioEncoderBase):
                 listener_non_lin_funcs[i], listener_strides[i],  dropout)
             )
         layers = [TDNNPadding(tdnn_layers)] + tdnn_layers
-        layers += [SelfAttentionTranformerLayer(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes)] * num_attn_blocks
-        layers += [MeanLayer(dim=1)]
-
+        layers += [SelfAttentionTranformerStack(d_model=d_model, num_heads=num_heads, hidden_sizes=hidden_sizes, num_transformer_layers=num_attn_blocks, aggregation=transformer_aggregation)]
         layers = nn.ModuleList(layers)
 
         super(TDNNListenerTransformerEncoder, self).__init__(mfcc_dim, layers, [], 0, variational, d_model)
@@ -234,4 +228,29 @@ class TDNNListenerTransformerEncoder(AudioEncoderBase):
 
 
 if __name__ == '__main__':
-    encoder = None
+
+    import torch
+
+    
+    kwargs = {
+        "listener_num_frames": [30, 15],
+        "listener_strides": [25, 5],
+        "listener_hidden_dims": [
+            [256, 256],
+            [256, 256]
+        ],
+        "listener_non_lin_funcs": ['relu', 'relu'],
+        "mfcc_dim": 40,
+        "d_model": 256,
+        "num_heads": 8,
+        "hidden_sizes": [2048],
+        "num_attn_blocks": 2,
+        "transformer_aggregation": "cls",
+        "dropout": 0,
+        "variational": False
+    }
+    transformer = SlidingDNNListenerTransformerEncoder(**kwargs)
+
+    data = torch.randn(32, 4000, 40)
+
+    print(transformer(data).shape)

@@ -179,8 +179,8 @@ class AgentBase:
 
 class ActiveLearningAgent(AgentBase):
     def __init__(self, train_set, batch_size, selector_class, model, device, budget):
-        super(ActiveLearningAgent, self).__init__(train_set, batch_size, selector_class, model, device, budget)
         # ADD AN EXCEPTION FOR THE WRONG TYPE OF SELECTOR HERE
+        super(ActiveLearningAgent, self).__init__(train_set, batch_size, selector_class, model, device, budget)
 
 
 class SubsetSelectionAgent(AgentBase):
@@ -189,9 +189,10 @@ class SubsetSelectionAgent(AgentBase):
 
 
 class KaldiAgent(AgentBase):
-    def __init__(self, train_set, batch_size, selector_class, model, device, namer, budget, suffix):
+    def __init__(self, train_set, batch_size, selector_class, model, device, namer, budget, suffix, call_path=True):
         super(KaldiAgent, self).__init__(train_set, batch_size, selector_class, model, device, budget)
-        command_line('bash path.sh')
+        if call_path:
+            command_line('bash path.sh')
         self.namer = namer
         self.suffix = suffix
 

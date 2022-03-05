@@ -11,9 +11,11 @@ except:
         raise Exception('cifar library not found')
 
 ## FOR BACKWARDS REFERENCE ONLY
+
 # moving_encoder_types = {
 #     "simple_sliding_nn": SimpleFeedForwardNNEncoder
 # }
+
 # encoder_types = moving_encoder_types.copy()
 # encoder_types.update({
 #     "basic_bidirectional_LSTM": BidirectionalLSTMAudioEncoder,
@@ -25,10 +27,11 @@ except:
 #     "blstm_listener_transformer": BLSTMListenerTransformerEncoder,
 #     "simple_loader": EmbeddingLoaderEncoder
 # })
-# 
+
 # moving_decoder_types = {
 #     "simple_sliding_nn": SimpleFeedForwardNNDecoder,
 # }
+
 # decoder_types = moving_decoder_types.copy()
 # decoder_types.update({
 #     "no_decoder": EmptyLayer, 

@@ -11,6 +11,7 @@ from cifar_repo.cifar import (
     parser, transform_train, transform_test, make_model, train, test,
     adjust_learning_rate
 )
+from util_functions.base import torch_manual_script
 
 device = (
     torch.device('cuda') if torch.cuda.is_available()
@@ -59,13 +60,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Random seed
-    if args.manualSeed is None:
-        args.manualSeed = random.randint(1, 10000)
-    print('\nSeed:', args.manualSeed, '\n')
-    random.seed(args.manualSeed)
-    torch.manual_seed(args.manualSeed)
-    if use_cuda:
-        torch.cuda.manual_seed_all(args.manualSeed)
+    torch_manual_script(args)
 
     if args.dataset == 'cifar10':
         train_dataset, test_dataset, num_classes = CIFAR10Subset, CIFAR10, 10

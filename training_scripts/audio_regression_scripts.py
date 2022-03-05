@@ -4,7 +4,7 @@ device = (
     torch.device('cuda') if torch.cuda.is_available() 
     else torch.device('cpu')
 )
-from tqdm import tqdm
+
 
 def audio_regression_script(
         ensemble,
@@ -58,26 +58,28 @@ def audio_regression_script(
         epoch_test_loss, test_batch_count = 0, 0
         ensemble.eval()
 
-        for batch in test_dataloader:
+        with torch.no_grad():
 
-            batch["padded_features"] = batch["padded_features"].to(dtype)
-            features = batch["padded_features"].to(device)
-            targets = batch[target_attribute_name].to(device)
-            _, decodings = ensemble(features)
-            decodings = [d.to(dtype) for d in decodings]
+            for batch in test_dataloader:
 
-            if is_regression:
-                decodings = [d.reshape(targets.shape) for d in decodings]
-
-            try:
-                targets = batch[target_attribute_name].to(dtype).to(device)
-                test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
-            except:
+                batch["padded_features"] = batch["padded_features"].to(dtype)
+                features = batch["padded_features"].to(device)
                 targets = batch[target_attribute_name].to(device)
-                test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+                _, decodings = ensemble(features)
+                decodings = [d.to(dtype) for d in decodings]
 
-            epoch_test_loss += test_regression_loss.item()
-            test_batch_count += 1
+                if is_regression:
+                    decodings = [d.reshape(targets.shape) for d in decodings]
+
+                try:
+                    targets = batch[target_attribute_name].to(dtype).to(device)
+                    test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+                except:
+                    targets = batch[target_attribute_name].to(device)
+                    test_regression_loss = torch.sum(torch.stack([criterion(d, targets) for d in decodings]))
+
+                epoch_test_loss += test_regression_loss.item()
+                test_batch_count += 1
 
         if test_batch_count == 0:
             test_batch_count += 1
